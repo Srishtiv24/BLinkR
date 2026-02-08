@@ -1,0 +1,16 @@
+.navBtn
+{
+    display: flex;
+    gap:10px;
+}
+.meetContainer
+{   height:90vh;
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-inline: 2.6rem;
+}
+.meetContainer img
+{
+    height:60vh;
+}
