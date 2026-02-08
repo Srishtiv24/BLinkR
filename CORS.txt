@@ -1,0 +1,163 @@
+// --- Media setup and toggles ---
+
+const getUserMediaSuccess = async (stream) => {
+  // set new stream
+  window.localStream = stream;
+  if (localVideoRef.current) {
+    localVideoRef.current.srcObject = stream;
+  }
+
+  // handle unexpected track endings
+  stream.getTracks().forEach((track) => {
+    track.onended = async () => {
+      setVideo(false);
+      setAudio(false);
+      const blackSilence = ({ width = 640, height = 480 } = {}) =>
+        new MediaStream([black({ width, height }), silence()]);
+      localVideoRef.current.srcObject = blackSilence();
+    };
+  });
+};
+
+// initial permissions request (only once)
+useEffect(() => {
+  navigator.mediaDevices
+    .getUserMedia({ video: true, audio: true })
+    .then(getUserMediaSuccess)
+    .catch(console.error);
+}, []);
+
+// toggle mic
+let handleAudio = () => {
+  try {
+    if (localVideoRef.current?.srcObject) {
+      localVideoRef.current.srcObject.getAudioTracks().forEach(track => {
+        track.enabled = !track.enabled;   // mute/unmute mic
+      });
+    }
+    setAudio(!audio);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+// toggle camera
+let handleVideo = () => {
+  try {
+    if (localVideoRef.current?.srcObject) {
+      localVideoRef.current.srcObject.getVideoTracks().forEach(track => {
+        track.enabled = !track.enabled;   // hide/show camera
+      });
+    }
+    setVideo(!video);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+// end call cleanup
+let handleEndCall = () => {
+  try {
+    let tracks = localVideoRef.current?.srcObject?.getTracks();
+    tracks?.forEach(track => track.stop());
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
+  } catch (e) {
+    console.log(e);
+  }
+  routeTo("/home");
+};
+
+
+// --- Screen share replaces camera ---
+const getDisplayMediaSuccess = async (stream) => {
+  const screenTrack = stream.getVideoTracks()[0];
+  const audioTracks = window.localStream?.getAudioTracks() || [];
+
+  // replace localStream with screen + audio
+  window.localStream = new MediaStream([screenTrack, ...audioTracks]);
+  if (localVideoRef.current) {
+    localVideoRef.current.srcObject = window.localStream;
+  }
+  setScreenAvailable(true);
+
+  // handle unexpected end of screen share
+  screenTrack.onended = () => {
+    setScreen(false);
+    setScreenAvailable(false);
+    initMedia(); // restore camera
+  };
+
+  // update peer connections
+  for (const id in connections.current) {
+    if (id === socketRefId.current) continue;
+    const sender = connections.current[id]
+      .getSenders()
+      .find((s) => s.track && s.track.kind === "video");
+    if (sender) {
+      sender.replaceTrack(screenTrack);
+    }
+// --- Screen share setup ---
+
+const getDisplayMediaSuccess = async (stream) => {
+  const screenTrack = stream.getVideoTracks()[0];
+
+  // keep existing audio tracks from localStream
+  const audioTracks = window.localStream?.getAudioTracks() || [];
+
+  // replace localStream with screen + audio
+  window.localStream = new MediaStream([screenTrack, ...audioTracks]);
+
+  // attach to local video element
+  if (localVideoRef.current) {
+    localVideoRef.current.srcObject = window.localStream;
+  }
+
+  setScreenAvailable(true);
+
+  // handle unexpected end of screen share
+  screenTrack.onended = () => {
+    setScreen(false);
+    setScreenAvailable(false);
+
+    // restore camera
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(getUserMediaSuccess)
+  .catch(console.error);
+  };
+
+  // update peer connections: replace video track with screen track
+  for (const id in connections.current) {
+    if (id === socketRefId.current) continue;
+    const sender = connections.current[id]
+      .getSenders()
+      .find((s) => s.track && s.track.kind === "video");
+    if (sender) {
+      sender.replaceTrack(screenTrack);
+    }
+  }
+};
+
+// --- Toggle screen share ---
+
+let handleScreen = () => {
+  if (!screen) {
+    // turn ON screen share
+    setScreen(true);
+    navigator.mediaDevices.getDisplayMedia({ video: true })
+      .then(getDisplayMediaSuccess)
+      .catch(console.error);
+  } else {
+    // turn OFF screen share
+    setScreen(false);
+    try {
+      window.localStream?.getVideoTracks().forEach(track => track.stop());
+    } catch (err) {
+      console.log(err);
+    }
+
+    // restore camera
+ navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(getUserMediaSuccess)
+      .catch(console.error);
+  }
+};

@@ -1,0 +1,55 @@
+STUN (Session Traversal Utilities for NAT)
+Purpose: Helps devices discover their public IP address and port when they’re behind a NAT (like your home router).
+
+How it works:
+
+Your browser asks a STUN server: “What’s my public IP and port?”
+
+The server replies with that info.
+
+Why it matters: Without this, two peers wouldn’t know how to reach each other directly if they’re behind different networks.
+
+ TURN (Traversal Using Relays around NAT)
+Purpose: Acts as a relay server when direct peer-to-peer communication fails.
+
+How it works:
+
+If NAT/firewall rules block direct traffic, all media (audio/video/data) is sent through the TURN server.
+
+Downside: More latency and bandwidth usage since traffic goes through a middleman.
+
+Why it matters: Ensures communication works even in restrictive networks (like corporate firewalls).
+
+ICE (Interactive Connectivity Establishment) Candidates
+Purpose: ICE is the framework that tries different connection methods until peers can talk.
+
+How it works:
+
+ICE gathers possible “candidates” (connection options).
+
+Candidates can be:
+
+Host candidates → local IP addresses.
+
+Server reflexive candidates → public IPs discovered via STUN.
+
+Relay candidates → TURN server addresses.
+
+ICE then tests these candidates to find the best working path.
+
+Why it matters: It automates the process of finding the fastest, most reliable route for communication.
+
+Putting it all together
+STUN → Finds your public IP.
+
+ICE → Collects all possible paths (local, public, relay).
+
+TURN → Steps in only if direct paths fail.
+
+So in short:
+
+STUN = “Who am I on the internet?”
+
+TURN = “If we can’t connect directly, I’ll relay.”
+
+ICE = “Let’s try all options and pick the best one.”
