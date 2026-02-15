@@ -1,4 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
+import server from "../enviornment";
+
 import styles from "../styles/videoMeet.module.css";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
@@ -21,7 +23,7 @@ import FormControl from "@mui/material/FormControl";
 import { io } from "socket.io-client";
 import { useNavigate , useLocation } from "react-router-dom";
 
-const server_url = "http://localhost:8000";
+const server_url = `${server}`;
 
 const peerConfigConnections = {
   iceServers: [{ urls: "stun:stun2.l.google.com:19302" }],

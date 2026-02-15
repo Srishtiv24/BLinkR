@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useNavigate,useLocation } from "react-router-dom";
 import axios from "axios";
+import server from "../enviornment";
 import httpStatus from "http-status";
 
 import Box from "@mui/material/Box";
@@ -82,11 +83,11 @@ export default function ResetnewPassword(props) {
 
   const [confirmPasswordError, setconfirmPasswordError] = React.useState(false);
   const [confirmPasswordErrorMessage, setconfirmPasswordErrorMessage] = React.useState("");
-
+  
   const client = axios.create({
-    baseURL: "http://localhost:8000/api/v1/users",
+    baseURL: `${server}/api/v1/users`,
   });
-
+  
   const resetPasswordFormSubmit = async () => {
     try {
       let response = await client.post("/reset_password", {

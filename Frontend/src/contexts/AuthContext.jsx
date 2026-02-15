@@ -5,11 +5,12 @@ import httpStatus from "http-status";
 import { jwtDecode } from "jwt-decode";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useLocation } from "react-router-dom";
+import server from "../enviornment";
 
 export const AuthContext = createContext({});
 
 const client = axios.create({
-  baseURL: "http://localhost:8000/api/v1/users",
+  baseURL: `${server}/api/v1/users`,
 });
 
 export const AuthProvider = ({ children }) => {

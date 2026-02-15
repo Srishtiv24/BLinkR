@@ -2,6 +2,7 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import httpStatus from "http-status";
+import server from "../enviornment";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -76,7 +77,7 @@ export default function ForgotPassword(props) {
   const [emailErrorMessage, setEmailErrorMessage] = React.useState("");
 
   const client = axios.create({
-    baseURL: "http://localhost:8000/api/v1/users",
+    baseURL: `${server}/api/v1/users`,
   });
 
   const forgotPasswordFormSubmit = async () => {
