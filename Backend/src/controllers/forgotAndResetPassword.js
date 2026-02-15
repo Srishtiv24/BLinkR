@@ -8,6 +8,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { User } from "../models/user.model.js";
 import httpStatus from "http-status";
+import client from "../enviornment.js";
 //Node Mailer
 
 // Create a transporter using SMTP
@@ -47,7 +48,7 @@ export const forgotPassword = async (req, res) => {
       process.env.JWT_SECRET_KEY2,
       { expiresIn: "10m" }
     );
-    const resetLink = `http://localhost:3000/reset-password?token=${token}`;
+    const resetLink = `${client}/reset-password?token=${token}`;
     await send(user, resetLink);
     res.status(httpStatus.OK).json({ message: "Reset link sent to email" });
   } catch (err) {
