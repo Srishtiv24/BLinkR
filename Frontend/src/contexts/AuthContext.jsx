@@ -58,7 +58,13 @@ export const AuthProvider = ({ children }) => {
       if (request.status === httpStatus.OK) {
         localStorage.setItem("token", request.data.token); //login token from backend
         setUserData(request.data.user);
-        router("/home"); //redirect
+         //redirect
+         const fromPath = location.state?.from?.pathname;
+         if (fromPath) {
+           navigate(fromPath, { replace: true });
+         } else {
+           navigate("/home", { replace: true });
+         }
       }
     } catch (err) {
       throw err;
@@ -148,9 +154,13 @@ export const AuthProvider = ({ children }) => {
           };
           localStorage.setItem("username", userInfo.name);
           setUserData(userInfo);
-          if (location.pathname === "/auth" || location.pathname === "/") {
+          const fromPath = location.state?.from?.pathname;
+          if (fromPath) {
+            router(fromPath);
+          } else {
             router("/home");
           }
+          
         } catch (err) {
           console.error("Failed to get Auth0 access token", err);
         }
