@@ -62,9 +62,9 @@ export const AuthProvider = ({ children }) => {
          const fromPath = location.state?.from?.pathname;
          console.log(fromPath);
          if (fromPath) {
-           navigate(fromPath, { replace: true });
+           router(fromPath, { replace: true });
          } else {
-           navigate("/home", { replace: true });
+           router("/home", { replace: true });
          }
       }
     } catch (err) {
