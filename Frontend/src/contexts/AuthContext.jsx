@@ -60,6 +60,7 @@ export const AuthProvider = ({ children }) => {
         setUserData(request.data.user);
          //redirect
          const fromPath = location.state?.from?.pathname;
+         console.log(fromPath);
          if (fromPath) {
            navigate(fromPath, { replace: true });
          } else {
