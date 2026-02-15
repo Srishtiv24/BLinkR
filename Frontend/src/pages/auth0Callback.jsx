@@ -1,21 +1,21 @@
 import React, { useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Loading } from "../utils/loading";
 import "../App.css";
 
 const Auth0Callback = () => {
   const { isLoading, isAuthenticated, error } = useAuth0();
   const navigate = useNavigate();
-  const location =useLocation();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      const fromPath = location.state?.from?.pathname;
-      if (fromPath) {
-        navigate(fromPath, { replace: true });
+      const fromPath = sessionStorage.getItem("redirectAfterLogin");
+
+      if (fromPath && /^\/[a-zA-Z0-9._-]+-room$/.test(fromPath)) {
+        navigate(fromPath);
       } else {
-        navigate("/home", { replace: true });
+        navigate("/home");
       }
     }
   }, [isLoading, isAuthenticated, navigate]);

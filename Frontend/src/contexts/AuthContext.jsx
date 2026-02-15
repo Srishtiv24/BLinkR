@@ -4,7 +4,6 @@ import axios from "axios";
 import httpStatus from "http-status";
 import { jwtDecode } from "jwt-decode";
 import { useAuth0 } from "@auth0/auth0-react";
-import { useLocation } from "react-router-dom";
 import server from "../enviornment";
 
 export const AuthContext = createContext({});
@@ -21,7 +20,6 @@ export const AuthProvider = ({ children }) => {
   const authContext = useContext(AuthContext);
   const [userData, setUserData] = useState(authContext); //ui should update acc to  login/reg so using use state
   const router = useNavigate(); //for redirects
-  const location = useLocation();
 
   const {
     loginWithRedirect,
@@ -58,14 +56,13 @@ export const AuthProvider = ({ children }) => {
       if (request.status === httpStatus.OK) {
         localStorage.setItem("token", request.data.token); //login token from backend
         setUserData(request.data.user);
-         //redirect
-         const fromPath = location.state?.from?.pathname || localStorage.getItem("redirectAfterLogin");
-         if (fromPath) {
-           router(fromPath, { replace: true });
-           localStorage.removeItem("redirectAfterLogin"); 
-         } else {
-           router("/home", { replace: true });
-         }
+        const fromPath = sessionStorage.getItem("redirectAfterLogin"); //if req from :url then redirect to same link
+        if (fromPath && /^\/[a-zA-Z0-9._-]+-room$/.test(fromPath)) {
+          router(fromPath);
+          sessionStorage.removeItem("redirectAfterLogin");
+        } else {
+          router("/home"); //redirect
+        }
       }
     } catch (err) {
       throw err;
@@ -155,14 +152,12 @@ export const AuthProvider = ({ children }) => {
           };
           localStorage.setItem("username", userInfo.name);
           setUserData(userInfo);
-          const fromPath = location.state?.from?.pathname || localStorage.getItem("redirectAfterLogin");
-          if (fromPath) {
+          const fromPath = sessionStorage.getItem("redirectAfterLogin");
+          if (fromPath && /^\/[a-zA-Z0-9._-]+-room$/.test(fromPath)) {
             router(fromPath);
-            localStorage.removeItem("redirectAfterLogin"); 
           } else {
             router("/home");
           }
-          
         } catch (err) {
           console.error("Failed to get Auth0 access token", err);
         }
