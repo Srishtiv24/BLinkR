@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import httpStatus from "http-status";
 import { jwtDecode } from "jwt-decode";
@@ -20,6 +20,7 @@ export const AuthProvider = ({ children }) => {
   const authContext = useContext(AuthContext);
   const [userData, setUserData] = useState(authContext); //ui should update acc to  login/reg so using use state
   const router = useNavigate(); //for redirects
+  const location=useLocation();
 
   const {
     loginWithRedirect,
@@ -155,9 +156,7 @@ export const AuthProvider = ({ children }) => {
           const fromPath = sessionStorage.getItem("redirectAfterLogin");
           if (fromPath && /^\/[a-zA-Z0-9._-]+-room$/.test(fromPath)) {
             router(fromPath);
-          } else {
-            router("/home");
-          }
+          }else if (location.pathname === "/auth" || location.pathname === "/") { router("/home"); }
         } catch (err) {
           console.error("Failed to get Auth0 access token", err);
         }
