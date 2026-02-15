@@ -163,7 +163,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
     syncAuth0();
-  }, [isAuthenticated, user, getAccessTokenSilently, router]);
+  }, [isAuthenticated, user, getAccessTokenSilently, router,location.pathname]);
   const data = {
     userData: userData,
     setUserData,
