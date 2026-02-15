@@ -59,10 +59,10 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem("token", request.data.token); //login token from backend
         setUserData(request.data.user);
          //redirect
-         const fromPath = location.state?.from?.pathname;
-         console.log(fromPath);
+         const fromPath = location.state?.from?.pathname || localStorage.getItem("redirectAfterLogin");
          if (fromPath) {
            router(fromPath, { replace: true });
+           localStorage.removeItem("redirectAfterLogin"); 
          } else {
            router("/home", { replace: true });
          }
@@ -155,9 +155,10 @@ export const AuthProvider = ({ children }) => {
           };
           localStorage.setItem("username", userInfo.name);
           setUserData(userInfo);
-          const fromPath = location.state?.from?.pathname;
+          const fromPath = location.state?.from?.pathname || localStorage.getItem("redirectAfterLogin");
           if (fromPath) {
             router(fromPath);
+            localStorage.removeItem("redirectAfterLogin"); 
           } else {
             router("/home");
           }

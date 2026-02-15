@@ -14,6 +14,7 @@ export default function ProtectedRoute({ children }) {
     );
   }
   if (!isLoggedIn() && !isAuthenticated) {
+    localStorage.setItem("redirectAfterLogin", location.pathname);
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
   return children;
