@@ -489,7 +489,8 @@ export default function VideoMeetComponent() {
                 style={{
                   backgroundColor: "#893bff",
                   color: "#fff",
-                  fontWeight:600
+                  fontWeight:600,
+                  marginLeft:"0.5rem"
                 }}
               >
                 Connect
@@ -498,14 +499,6 @@ export default function VideoMeetComponent() {
             <br/>
             <div>
             <video ref={localVideoRef} autoPlay  />
-            <div className={styles.buttonContainer}>
-              <IconButton onClick={handleVideo}>
-                {video === true ? <VideocamIcon /> : <VideocamOffIcon />}
-              </IconButton>
-              <IconButton onClick={handleAudio}>
-                {audio === true ? <MicIcon /> : <MicOffIcon />}
-              </IconButton>
-              </div>
             </div>
           </div>
         ) : (

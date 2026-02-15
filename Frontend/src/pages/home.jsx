@@ -243,7 +243,7 @@ function HomeComponent() {
 
           <div className={styles.rightPanel}>
             <Welcome />
-            <h1>Interview anyone, anywhere — with code & clarity</h1>
+            <h1>Interview anyone, anywhere — with clarity & ease</h1>
             <br />
             <div>
               <div className={styles.codeContainer}>

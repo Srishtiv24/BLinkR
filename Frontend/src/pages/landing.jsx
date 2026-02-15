@@ -32,7 +32,7 @@ export default function LandingPage() {
       <div className="landingMainContainer">
         <div>
           <h1 style={{ marginBottom: "0.1rem" }}>
-            Code.<span style={{ color: "#603FEF" }}>Connect.</span>Collaborate.
+            Connect.<span style={{ color: "#603FEF" }}>Communicate.</span>Collaborate.
           </h1>
           <p>Your virtual interview room, reimagined</p>
           <div role="button">
