@@ -1,0 +1,144 @@
+.navBtn
+{
+    display: flex;
+    gap:10px;
+}
+.meetContainer
+{   height:90vh;
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-inline: 2.6rem;
+}
+.meetContainer img
+{
+    height:60vh;
+}
+
+
+.codeContainer
+{
+ display: flex;
+ justify-content: flex-start;
+ align-items: flex-start;
+ gap:12px;
+}
+.codeBtn
+{
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    align-items: center;
+    gap:8px;
+
+}
+
+
+@media (max-width: 768px) {
+    .meetContainer {
+      height: auto;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin-inline: 1rem;
+      gap: 1.4rem;
+      text-align: center;
+      margin-top: 3rem;
+    }
+  
+    .meetContainer img {
+      height: 34vh;
+      max-width: 100%;
+      object-fit: contain;
+    }
+  
+    .leftPanel {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+  
+    .rightPanel {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+  
+    .navBtn {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+  
+    .navBtn button,
+    .navBtn .MuiIconButton-root {
+      font-size: 0.8rem;
+      padding: 4px 6px;
+    }
+  
+    .rightPanel h1 {
+      font-size: 1.45rem !important;
+      font-weight: 500 !important;  
+      line-height: 1.25;
+      text-align: center;
+    }
+  
+    .rightPanel h1 span {
+      font-size: 1.4rem !important;
+      font-weight: 500 !important;
+    }
+  
+    .rightPanel > div {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    
+  .codeContainer
+  {
+   display: inline;
+   margin-top:1.5rem;
+  }
+
+  .codeBtn
+  {
+   display: flex;
+   justify-content: flex-start;
+   align-items: center;
+   gap:10px;
+   margin-top:1rem;
+
+  }
+}
+  @media (max-width: 480px) {
+    .meetContainer img {
+      height: 35vh;
+    }
+  
+    .rightPanel h1 {
+      font-size: 1rem !important;
+      font-weight: 500 !important;
+    }
+  
+    .rightPanel h1 span {
+      font-size: 1rem !important;
+      font-weight: 500 !important;
+    }
+  
+    .navBtn {
+      gap: 4px;
+    }
+
+    #logo
+    {
+      font-size: 1rem !important;
+    }
+  }
+  

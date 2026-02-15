@@ -1,4 +1,8 @@
 import * as React from "react";
+import { AuthContext } from "../contexts/AuthContext.jsx";
+import { useNavigate } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
+
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
@@ -17,11 +21,12 @@ import ForgotPassword from "./components/ForgotPassword";
 import AppTheme from "./components/AppTheme";
 import ColorModeSelect from "./components/ColorModeSelect";
 import { GoogleIcon } from "./components/CustomIcons";
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useNavigate } from "react-router-dom";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import IconButton from "@mui/material/IconButton";
-import { AuthContext } from "../contexts/AuthContext.jsx";
 import Snackbar from "@mui/material/Snackbar";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ErrorIcon from "@mui/icons-material/Error";
+
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -68,52 +73,48 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 export default function SignIn(props) {
   let navigate = useNavigate();
 
-  const [username, setUsername] = React.useState("");
+  const [email, setEmail] = React.useState("");
   const [name, setName] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [error, setError] = React.useState("");
   const [message, setMessage] = React.useState("");
   const [formState, setFormState] = React.useState(0);
   const [open, setOpen] = React.useState(false); //for snackbar- flash
-
-  const [usernameError, setUsernameError] = React.useState(false);
-  const [usernameErrorMessage, setUsernameErrorMessage] = React.useState("");
+  const [severity, setSeverity] = React.useState("success"); 
+  const [emailError, setEmailError] = React.useState(false);
+  const [emailErrorMessage, setEmailErrorMessage] = React.useState("");
   const [nameError, setNameError] = React.useState(false);
   const [nameErrorMessage, setNameErrorMessage] = React.useState("");
   const [passwordError, setPasswordError] = React.useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState("");
 
-  const { handleRegister, handleLogin } = React.useContext(AuthContext);
+  const { handleRegister, handleLogin ,handleAuth0Login} = React.useContext(AuthContext);
 
   let handleAuth = async () => {
     try {
       if (formState === 0) {
         //login
-        let result = await handleLogin(username, password);
+        let result = await handleLogin(email, password);
         console.log(result);
-        setMessage(result);//snackbar
-        setOpen(true);
       }
       if (formState === 1) {
         //register
-        let result = await handleRegister(name, username, password);
+        let result = await handleRegister(name, email, password);
         console.log(result);
-        setMessage(result);//snackbar
+        setSeverity("success");
+        setMessage(result); //snackbar
         setOpen(true);
         setFormState(0); //move to login
-        setError(''); //re-initalize
-        setPassword('');
-        setUsername('');
-        setName('');
+        setPassword("");
+        setEmail("");
+        setName("");
       }
     } catch (err) {
       let message = err.response.data.message;
-      setError(message);
-    }
-  };
+      setMessage(message);
+      setSeverity("error");
+      setOpen(true);
 
-  const handleClickOpen = () => {
-    setOpen(true);
+    }
   };
 
   const handleClose = () => {
@@ -122,14 +123,14 @@ export default function SignIn(props) {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    if (usernameError || passwordError || nameError) {
+    if (emailError || passwordError || nameError) {
       return;
     }
-      console.log(`${name} reigstred !`);
+    console.log(`${name} reigstred !`);
   };
 
   const validateInputs = () => {
-    const username = document.getElementById("username");
+    const email = document.getElementById("email");
     const password = document.getElementById("password");
     const name = document.getElementById("name");
 
@@ -142,24 +143,36 @@ export default function SignIn(props) {
       setNameErrorMessage("Please enter your name.");
     }
 
-    if (!username.value) {
-      setUsernameError(true);
-      setUsernameErrorMessage("Please enter your username.");
+    if (!email.value) {
+      setEmailError(true);
+      setEmailErrorMessage("Please enter your email.");
+      isValid = false;
+    } else if (!/^\S+@\S+\.\S+$/.test(email.value)) {
+      setEmailError(true);
+      setEmailErrorMessage("Please enter a valid email address.");
       isValid = false;
     } else {
-      setUsernameError(false);
-      setUsernameErrorMessage("");
+      setEmailError(false);
+      setEmailErrorMessage("");
     }
 
     if (!password.value || password.value.length < 6) {
       setPasswordError(true);
       setPasswordErrorMessage("Password must be at least 6 characters long.");
       isValid = false;
+    } else if (
+      !/[A-Z]/.test(password.value) || 
+      !/[0-9]/.test(password.value) || 
+      !/[!@#$%^&*(),.?":{}|<>]/.test(password.value)
+    ) {
+      setPasswordError(true);
+      setPasswordErrorMessage("Password must include at least one uppercase letter, one number, and one special character.");
+      isValid = false;
     } else {
       setPasswordError(false);
       setPasswordErrorMessage("");
     }
-
+    
     return isValid;
   };
 
@@ -167,8 +180,15 @@ export default function SignIn(props) {
     <AppTheme {...props}>
       <CssBaseline enableColorScheme />
       <SignInContainer direction="column" justifyContent="space-between">
-      <IconButton style={{backgroundColor:"transparent"}} onClick={()=>{navigate("/")}} sx={{ position: "fixed", top: "1rem", left: "1rem" }}
-      ><ArrowBackIcon/></IconButton>
+        <IconButton
+          style={{ backgroundColor: "transparent" }}
+          onClick={() => {
+            navigate("/");
+          }}
+          sx={{ position: "fixed", top: "1rem", left: "1rem" }}
+        >
+          <ArrowBackIcon />
+        </IconButton>
         <ColorModeSelect
           sx={{ position: "fixed", top: "1rem", right: "1rem" }}
         />
@@ -222,12 +242,11 @@ export default function SignIn(props) {
               <FormControl>
                 <FormLabel htmlFor="name">Name</FormLabel>
                 <TextField
-                  error={nameError}
                   helperText={nameErrorMessage}
                   id="name"
                   type="text"
                   name="name"
-                  placeholder="John Doe "
+                  placeholder="John Doe"
                   autoComplete="name"
                   autoFocus
                   required
@@ -236,6 +255,7 @@ export default function SignIn(props) {
                     setName(e.target.value);
                   }}
                   value={name}
+                  FormHelperTextProps={{ sx: { color: nameError ? "#c80815" : "gray" } }}
                 />
               </FormControl>
             ) : (
@@ -243,29 +263,27 @@ export default function SignIn(props) {
             )}
 
             <FormControl>
-              <FormLabel htmlFor="username">Username</FormLabel>
+              <FormLabel htmlFor="email">Email</FormLabel>
               <TextField
-                error={usernameError}
-                helperText={usernameErrorMessage}
-                id="username"
-                type="text"
-                name="username"
-                placeholder="@john"
-                autoComplete="username"
+                helperText={emailErrorMessage}
+                id="email"
+                type="email"
+                name="email"
+                placeholder="johndoe@gmail.com"
+                autoComplete="email"
                 autoFocus
                 required
                 fullWidth
-                color={usernameError ? "error" : "primary"}
                 onChange={(e) => {
-                  setUsername(e.target.value);
+                  setEmail(e.target.value);
                 }}
-                value={username}
+                value={email}
+                FormHelperTextProps={{ sx: { color: emailError ? "#c80815" : "gray" } }}
               />
             </FormControl>
             <FormControl>
               <FormLabel htmlFor="password">Password</FormLabel>
               <TextField
-                error={passwordError}
                 helperText={passwordErrorMessage}
                 name="password"
                 placeholder="••••••"
@@ -276,53 +294,49 @@ export default function SignIn(props) {
                 required
                 fullWidth
                 variant="outlined"
-                color={passwordError ? "error" : "primary"}
                 onChange={(e) => {
                   setPassword(e.target.value);
                 }}
                 value={password}
+                FormHelperTextProps={{ sx: { color: passwordError ? "#c80815" : "gray" } }}
               />
             </FormControl>
             <FormControlLabel
               control={<Checkbox value="remember" color="primary" />}
               label="Remember me"
             />
-            <ForgotPassword  handleClose={handleClose} />
-
-            {error && <p style={{ color: "#8b0000" }}>*{error}</p>}
-
+            <ForgotPassword handleClose={handleClose} />
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              onClick={()=>{
-                if(validateInputs())
-                  {
-                    handleAuth();
-                  }
+              onClick={() => {
+                if (validateInputs()) {
+                  handleAuth();
+                }
               }}
             >
-              {(formState===0)?"Login":"Register"}
+              {formState === 0 ? "Login" : "Register"}
             </Button>
-            <Link
-              component="button"
-              type="button"
-              onClick={handleClickOpen}
-              variant="body2"
-              sx={{ alignSelf: "center" }}
-            >
-              Forgot your password?
-            </Link>
+            {formState === 0 && (
+              <Link
+                sx={{ alignSelf: "center" }}
+                to="/forgot-password"
+                component={RouterLink}
+              >
+                Forgot your password?
+              </Link>
+            )}
           </Box>
           <Divider>or</Divider>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Button
               fullWidth
               variant="outlined"
-              onClick={() => alert("Sign in with Google")}
+              onClick={handleAuth0Login}
               startIcon={<GoogleIcon />}
             >
-              Sign in with Google
+              Continue with Google
             </Button>
 
             {/* <Typography sx={{ textAlign: 'center' }}>
@@ -337,9 +351,31 @@ export default function SignIn(props) {
             </Typography> */}
           </Box>
         </Card>
+        
+
+<Snackbar open={open} autoHideDuration={10000} onClose={handleClose}>
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      gap: 1.5,
+      bgcolor: severity === "success" ? "#2e7d32" : "#d32f2f",
+      color: "white",
+      px: 3,
+      py: 1.5,
+      borderRadius: 1,
+    }}
+  >
+    {severity === "success" ? (
+      <CheckCircleIcon sx={{ color: "white" }} />
+    ) : (
+      <ErrorIcon sx={{ color: "white" }} />
+    )}
+    <Typography variant="body1">{message}</Typography>
+  </Box>
+</Snackbar>
       </SignInContainer>
 
-      <Snackbar open={open} autoHideDuration={4000} message={message} />
     </AppTheme>
   );
 }

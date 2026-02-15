@@ -1,7 +1,5 @@
-Frontend/my-app/node_modules
+Frontend/node_modules
 Backend/node_modules
-CORS.txt
-Socket.txt
-StunTurnIce.txt
-tokens.txt
-WebRtc.txt
+read
+Frontend/.env
+Backend/.env

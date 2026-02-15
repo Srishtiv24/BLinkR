@@ -1,8 +1,10 @@
 import React, { useState, useContext, useEffect } from "react";
 import { HomeContext } from "../contexts/HomeContext";
 import { useNavigate } from "react-router-dom";
+
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
+import Button from "@mui/material/Button";
 import CardContent from "@mui/material/CardContent";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
@@ -13,11 +15,14 @@ import CssBaseline from "@mui/material/CssBaseline";
 import styles from "../styles/homeComponent.module.css";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ColorModeSelect from "./components/ColorModeSelect";
+import { Loading } from "../utils/loading";
 
 export default function HistoryComponent() {
-  const { getHistoryOfUser } = useContext(HomeContext);
+  const { getHistoryOfUser, clearHistoryOfUser } = useContext(HomeContext);
   let navigate = useNavigate();
   const [meetings, setMeetings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const fetchHistory = async () => {
       try {
@@ -25,19 +30,30 @@ export default function HistoryComponent() {
         setMeetings(history);
       } catch (err) {
         console.log(err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchHistory();
   }, []);
 
-  const formatDate=(dateString)=>{
-     const date=new Date(dateString);
-     const day=date.getDate().toString().padStart(2,"0");
-     const month=(date.getMonth()+1).toString().padStart(2,"0");
-     const year=(date.getFullYear());
+  const handleClearHistory = async () => {
+    try {
+      await clearHistoryOfUser();
+      setMeetings([]);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
-     return `${day}/${month}/${year}`
-  }
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  };
 
   return (
     <div>
@@ -83,27 +99,48 @@ export default function HistoryComponent() {
           </Box>
         </div>
         <div>
-          {meetings.length===0 && <p style={{fontSize:"1rem",padding:"1rem"}}>No history yet.</p>}
           <Box sx={{ minWidth: 275 }}>
-            {meetings.length>0 && meetings.map((meeting, i) => {
-              return (
-                <Card key={i} variant="outlined">
-                  <CardContent>
-                    <Typography
-                      gutterBottom
-                      sx={{ color: "text.secondary", fontSize: 14 }}
-                    >
-                      Meeting Code : {meeting.meeting_code}
-                    </Typography>
-                    <Typography sx={{ color: "text.secondary", mb: 1.5 }}>
-                      Date : {formatDate(meeting.date)}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              )
-            })}
+            {loading ? (
+              <Loading/>
+            ) : meetings.length > 0 ? (
+              meetings.map((meeting, i) => {
+                return (
+                  <div>
+                    <Card key={i} variant="outlined">
+                      <CardContent>
+                        <Typography
+                          gutterBottom
+                          sx={{ color: "text.secondary", fontSize: 14 }}
+                        >
+                          Meeting Code : {meeting.meeting_code}
+                        </Typography>
+                        <Typography sx={{ color: "text.secondary", mb: 1.5 }}>
+                          Date : {formatDate(meeting.date)}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </div>
+                );
+              })
+            ) : (
+              <p style={{ fontSize: "1rem", padding: "1rem" }}>
+                No history yet.
+              </p>
+            )}
           </Box>
         </div>
+        {meetings.length > 0 && (
+          <Button
+            onClick={handleClearHistory}
+            style={{
+              margin: "0.5rem",
+              backgroundColor: "#893bff",
+              color: "#fff",
+            }}
+          >
+            Clear History
+          </Button>
+        )}
       </AppTheme>
     </div>
   );

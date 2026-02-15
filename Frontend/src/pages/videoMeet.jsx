@@ -48,6 +48,7 @@ export default function VideoMeetComponent() {
   let [askForUsername, setAskForUsername] = useState(true);
   let [username, setUsername] = useState("");
   let [videos, setVideos] = useState([]);
+  let [duration,setDuration]=useState();
 
   const [usernameError, setUsernameError] = React.useState(false);
   const [usernameErrorMessage, setUsernameErrorMessage] = React.useState("");
@@ -243,7 +244,10 @@ export default function VideoMeetComponent() {
       socketRef.current.on("chat-message", addMessage);
 
       socketRef.current.on("user-left", (id, diffTime) => {
-        console.log("User left:", id, "Online for:", diffTime);
+        const minutes = Math.floor(diffTime / 60000); 
+        const seconds = Math.floor((diffTime % 60000) / 1000);
+        console.log(`User left ${id} was online for ${minutes}m ${seconds}s`);
+        setDuration(diffTime);
         setVideos((videos) => videos.filter((video) => video.socketId !== id));
       });
 
@@ -476,14 +480,17 @@ export default function VideoMeetComponent() {
               
               />
             </FormControl>
-              <Button
-                 onClick={()=>{
-                   if(validateInputs())
-                     { connect();
-                     }
-                    }}
-                variant="contained"
-                style={{ fontWeight: 600 }}
+            <Button
+                onClick={()=>{
+                  if(validateInputs())
+                    { connect();
+                    }
+                }} 
+                style={{
+                  backgroundColor: "#893bff",
+                  color: "#fff",
+                  fontWeight:600
+                }}
               >
                 Connect
               </Button>
