@@ -3,6 +3,8 @@ if (process.env.NODE_ENV !== "production") {
   dotenv.config();
 }
 
+console.log(process.env.GMAIL_APP_USER,process.env.GMAIL_APP_PASS);
+
 import nodemailer from "nodemailer";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
