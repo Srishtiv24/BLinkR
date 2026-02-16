@@ -8,7 +8,6 @@ const withAuth=(WrappedComponent)=>{
         const isAuthenticated=()=>{
            return( localStorage.getItem("token"))?true:false;
         }
-
         useEffect(()=>{
           if(!isAuthenticated())
             {router("/auth");}

@@ -21,7 +21,7 @@ import SendIcon from "@mui/icons-material/Send";
 import QuestionAnswerRoundedIcon from "@mui/icons-material/QuestionAnswerRounded";
 import FormControl from "@mui/material/FormControl";
 import { io } from "socket.io-client";
-import { useNavigate , useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const server_url = `${server}`;
 
@@ -30,7 +30,7 @@ const peerConfigConnections = {
 };
 
 export default function VideoMeetComponent() {
-  let routeTo=useNavigate();
+  let routeTo = useNavigate();
   let location = useLocation();
 
   const connections = useRef({}); //state not changes //no of connections connect to the client
@@ -50,7 +50,7 @@ export default function VideoMeetComponent() {
   let [askForUsername, setAskForUsername] = useState(true);
   let [username, setUsername] = useState("");
   let [videos, setVideos] = useState([]);
-  let [duration,setDuration]=useState();
+  let [duration, setDuration] = useState();
 
   const [usernameError, setUsernameError] = React.useState(false);
   const [usernameErrorMessage, setUsernameErrorMessage] = React.useState("");
@@ -60,7 +60,11 @@ export default function VideoMeetComponent() {
       const userMediaStream = await navigator.mediaDevices.getUserMedia({
         //video audio
         video: true,
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
       });
       if (navigator.mediaDevices.getDisplayMedia) {
         //share screen
@@ -181,7 +185,6 @@ export default function VideoMeetComponent() {
       return;
     }
 
-    if (signal.sdp) {
       if (signal.sdp) {
         const desc = new RTCSessionDescription(signal.sdp);
 
@@ -204,7 +207,6 @@ export default function VideoMeetComponent() {
           }
         }
       }
-    }
 
     if (signal.ice) {
       try {
@@ -217,7 +219,10 @@ export default function VideoMeetComponent() {
 
   let addMessage = (data, sender, senderID) => {
     //sync data,sender,socketid of sender
-    setMessages((prev) => [...prev, { sender: sender, data: data ,id:senderID}]);
+    setMessages((prev) => [
+      ...prev,
+      { sender: sender, data: data, id: senderID },
+    ]);
 
     if (senderID !== socketRefId.current) {
       setNewMessages((prev) => prev + 1);
@@ -246,12 +251,15 @@ export default function VideoMeetComponent() {
       socketRef.current.on("chat-message", addMessage);
 
       socketRef.current.on("user-left", (id, diffTime) => {
-        const minutes = Math.floor(diffTime / 60000); 
-        const seconds = Math.floor((diffTime % 60000) / 1000);
-        console.log(`User left ${id} was online for ${minutes}m ${seconds}s`);
-        setDuration(diffTime);
+
+        if (connections.current[id]) {
+          connections.current[id].close();
+          delete connections.current[id];
+        }
+      
         setVideos((videos) => videos.filter((video) => video.socketId !== id));
       });
+      
 
       socketRef.current.on("user-joined", async (id, clients) => {
         console.log("New user joined:", id, "All clients:", clients);
@@ -382,17 +390,31 @@ export default function VideoMeetComponent() {
       });
     }
   };
-
-  let getDisplayMedia = () => {
-    if (screen && navigator.mediaDevices.getDisplayMedia) {
-      navigator.mediaDevices
-        .getDisplayMedia({ video: true, audio: true })
-        .then(getDisplayMediaSuccess) //update audio/vodeo status on/off in all devices connected in network
-        .catch((err) => {
-          console.log(err);
-        });
+  let getDisplayMedia = async () => {
+    if (!screen || !navigator.mediaDevices.getDisplayMedia) return;
+  
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+      });
+  
+      const audioStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+  
+      const combinedStream = new MediaStream([
+        ...screenStream.getVideoTracks(),
+        ...audioStream.getAudioTracks(),
+      ]);
+  
+      getDisplayMediaSuccess(combinedStream);
+  
+    } catch (err) {
+      console.log("Screen share error:", err);
+      setScreen(false);
     }
   };
+  
 
   useEffect(() => {
     if (screen !== undefined) {
@@ -406,37 +428,58 @@ export default function VideoMeetComponent() {
   let handleChat = () => {
     setModal(!showModal);
   };
-  useEffect(()=>{
-    if(showModal===true)
-      { setNewMessages(0);
-      }
-  },[showModal])
+  useEffect(() => {
+    if (showModal === true) {
+      setNewMessages(0);
+    }
+  }, [showModal]);
 
-  let handleEndCall=() =>{
-      try{ 
-        let tracks=localVideoRef.current.srcObject.getTracks();
-        tracks.forEach(track=>track.stop());
+  useEffect(() => {
+    return () => {
+      // Close all peer connections
+      Object.values(connections.current).forEach((peer) => {
+        peer.close();
+      });
+  
+      connections.current = {};
+  
+      // Disconnect socket
+      if (socketRef.current) {
+        socketRef.current.disconnect();
       }
-      catch(e){
-        console.log(e)
+  
+      // Stop media tracks
+      if (window.localStream) {
+        window.localStream.getTracks().forEach(track => track.stop());
       }
-      
-      if (location.pathname.startsWith("/guestRoom"))
-         { routeTo("/"); }
-      else
-      {
-        routeTo("/home");
-      }
-  }
+    };
+  }, []);
+  
+  let handleEndCall = () => {
+    try {
+      let tracks = localVideoRef.current.srcObject.getTracks();
+      tracks.forEach((track) => track.stop());
+    } catch (e) {
+      console.log(e);
+    }
+
+    if (location.pathname.startsWith("/guestRoom")) {
+      routeTo("/");
+    } else {
+      routeTo("/home");
+    }
+  };
   let sendMessage = () => {
-    socketRef.current.emit("chat-message", message, username);
+    const cleaned = message.trim();
+    if (!cleaned) return;
+  
+    socketRef.current.emit("chat-message", cleaned, username);
     setMessage("");
   };
   
   const validateInputs = () => {
     let isValid = true;
-    if (!username) 
-   {
+    if (!username) {
       setUsernameError(true);
       setUsernameErrorMessage("Please enter your username.");
       isValid = false;
@@ -455,52 +498,52 @@ export default function VideoMeetComponent() {
         {askForUsername === true ? (
           <div className={styles.preview}>
             <div>
-            <FormControl>
-              <TextField
-                error={usernameError}
-                helperText={usernameErrorMessage}
-                id="outlined-basic"
-                label="Username"
-                variant="outlined"
-                name="username"
-                color={usernameError ? "red": "primary"}
-                onChange={(e) => {
-                  setUsername(e.target.value);
+              <FormControl>
+                <TextField
+                  error={usernameError}
+                  helperText={usernameErrorMessage}
+                  id="outlined-basic"
+                  label="Username"
+                  variant="outlined"
+                  name="username"
+                  color={usernameError ? "red" : "primary"}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                  }}
+                  value={username}
+                  sx={{
+                    "& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#E53935", // border color when error
+                      },
+                    "& .MuiFormLabel-root.Mui-error": {
+                      color: "#E53935", // label color when error
+                    },
+                    "& .MuiFormHelperText-root.Mui-error": {
+                      color: "#E53935", // helper text color when error
+                    },
+                  }}
+                />
+              </FormControl>
+              <Button
+                onClick={() => {
+                  if (validateInputs()) {
+                    connect();
+                  }
                 }}
-                value={username}
-                sx={{
-                  "& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#E53935",   // border color when error
-                  },
-                  "& .MuiFormLabel-root.Mui-error": {
-                    color: "#E53935",         // label color when error
-                  },
-                  "& .MuiFormHelperText-root.Mui-error": {
-                    color: "#E53935",         // helper text color when error
-                  },
-                }}
-              
-              />
-            </FormControl>
-            <Button
-                onClick={()=>{
-                  if(validateInputs())
-                    { connect();
-                    }
-                }} 
                 style={{
                   backgroundColor: "#893bff",
                   color: "#fff",
-                  fontWeight:600,
-                  marginLeft:"0.5rem"
+                  fontWeight: 600,
+                  marginLeft: "0.5rem",
                 }}
               >
                 Connect
               </Button>
             </div>
-            <br/>
+            <br />
             <div>
-            <video ref={localVideoRef} autoPlay  />
+              <video ref={localVideoRef} autoPlay />
             </div>
           </div>
         ) : (
@@ -515,15 +558,15 @@ export default function VideoMeetComponent() {
                     <h2>Chat</h2>
                     <QuestionAnswerRoundedIcon />
                   </div>
-                  <hr style={{color:"gray",width:"90%",opacity:"0.2"}}/>
+                  <hr style={{ color: "gray", width: "90%", opacity: "0.2" }} />
                   <div className={styles.chattingArea}>
-                  <br/>
+                    <br />
                     {messages.length > 0 ? (
                       messages.map((item, index) => {
                         return (
                           <div
                             className={
-                               socketRefId.current!== item.id
+                              socketRefId.current !== item.id
                                 ? styles.msgReceived
                                 : styles.msgSended
                             }
@@ -575,11 +618,8 @@ export default function VideoMeetComponent() {
               </IconButton>
               {screenAvailable === true && (
                 <IconButton onClick={handleScreen}>
-                  {screen === true ? (
-                    <ScreenShareIcon />
-                  ) : (
-                    <StopScreenShareIcon />
-                  )}
+                 {screen === true ? <StopScreenShareIcon /> : <ScreenShareIcon />}
+
                 </IconButton>
               )}
               <Badge badgeContent={newMessages} color="secondary">
@@ -592,11 +632,12 @@ export default function VideoMeetComponent() {
               className={styles.meetUserVideo}
               ref={localVideoRef}
               autoPlay
-              muted={!audio} 
+              muted //our voice can cause echo
             />
-            <div className={styles.conferenceView} key={video.socketId}>
+            <div className={styles.conferenceView}>
               {videos.map((video) => (
                 <video
+                key={video.socketId}
                   data-socket={video.socketId}
                   ref={(ref) => {
                     if (ref && video.stream) {
@@ -604,7 +645,6 @@ export default function VideoMeetComponent() {
                     }
                   }}
                   autoPlay
-                  muted
                 ></video>
               ))}
             </div>
