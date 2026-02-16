@@ -591,6 +591,7 @@ export default function VideoMeetComponent() {
                   </div>
                   <div className={styles.sendingArea}>
                     <TextField
+                      className={styles.chatInput}
                       id="outlined-basic"
                       label="Enter message"
                       variant="outlined"
