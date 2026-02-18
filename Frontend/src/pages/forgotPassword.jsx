@@ -231,8 +231,8 @@ export default function ForgotPassword(props) {
             <ErrorIcon sx={{ color: "white" }} />
           )}
           <Typography variant="body1">
-            {message} 
-            {resetLink && <Link href={resetLink}  underline="always">Reset Password</Link>}
+            {message} : 
+            {resetLink && <Link href={resetLink}  style={{textDecoration:'underline'}}> Reset Password </Link>}
           </Typography>
         </Box>
       </Snackbar>
