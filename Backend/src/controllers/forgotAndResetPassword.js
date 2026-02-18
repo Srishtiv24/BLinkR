@@ -91,8 +91,8 @@ export const forgotPassword = async (req, res) => {
           .status(httpStatus.OK)
           .json({
             message:
-              "Email sending disabled in this environment. Use reset link directly.",
-            resetLink,
+              `Email sending via SMTP disabled in free-tier of Render. Use reset link directly:,
+            ${resetLink}`,
           });
       }
     }
