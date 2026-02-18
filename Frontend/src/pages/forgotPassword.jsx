@@ -70,8 +70,9 @@ export default function ForgotPassword(props) {
   const [email, setEmail] = React.useState("");
 
   const [message, setMessage] = React.useState("");
+  const [resetLink, setResetLink] = useState("");
   const [open, setOpen] = React.useState(false);
-  const [severity, setSeverity] = React.useState("success"); 
+  const [severity, setSeverity] = React.useState("success");
 
   const [emailError, setEmailError] = React.useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = React.useState("");
@@ -89,8 +90,12 @@ export default function ForgotPassword(props) {
 
       if (response.status === httpStatus.OK) {
         setMessage(response.data.message);
-        setOpen(true);
         setSeverity("success");
+        if (response.data.resetLink) {
+          setResetLink(response.data.resetLink);
+          setSeverity("");
+        }
+        setOpen(true);
       }
     } catch (err) {
       if (err.response?.status === httpStatus.BAD_REQUEST) {
@@ -105,11 +110,11 @@ export default function ForgotPassword(props) {
       setSeverity("error");
       setOpen(true);
     }
-  }; 
+  };
 
-  const handleClose=()=>{
-   setOpen(false);
-  }
+  const handleClose = () => {
+    setOpen(false);
+  };
 
   const handleSubmitEmail = async (event) => {
     event.preventDefault();
@@ -206,30 +211,30 @@ export default function ForgotPassword(props) {
         </Card>
       </Container>
 
-<Snackbar open={open} autoHideDuration={10000} onClose={handleClose}>
-  <Box
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      gap: 1.5,
-      bgcolor: severity === "success" ? "#2e7d32" : "#d32f2f",
-      color: "white",
-      px: 3,
-      py: 1.5,
-      borderRadius: 1,
-    }}
-  >
-    {severity === "success" ? (
-      <CheckCircleIcon sx={{ color: "white" }} />
-    ) : (
-      <ErrorIcon sx={{ color: "white" }} />
-    )}
-    <Typography variant="body1">{message}</Typography>
-  </Box>
-</Snackbar>
-
-
-
+      <Snackbar open={open} autoHideDuration={10000} onClose={handleClose}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            bgcolor: severity === "success" ? "#2e7d32" : "#d32f2f",
+            color: "white",
+            px: 3,
+            py: 1.5,
+            borderRadius: 1,
+          }}
+        >
+          {severity === "success" ? (
+            <CheckCircleIcon sx={{ color: "white" }} />
+          ) : (
+            <ErrorIcon sx={{ color: "white" }} />
+          )}
+          <Typography variant="body1">
+            {message}
+            {resetLink && <Link href={resetLink}>Reset Password</Link>}
+          </Typography>
+        </Box>
+      </Snackbar>
     </AppTheme>
   );
 }

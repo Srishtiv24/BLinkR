@@ -87,13 +87,11 @@ export const forgotPassword = async (req, res) => {
     } else {
       // free-tier hosting (SMTP blocked)
       {
-        return res
-          .status(httpStatus.OK)
-          .json({
-            message:
-              `Email sending via SMTP disabled in free-tier of Render. Use reset link directly:,
-            ${resetLink}`,
-          });
+        return res.status(httpStatus.OK).json({
+          message: "Email sending disabled in free-tier of Render. Use reset link directly.",
+          resetLink: resetLink
+        });
+        
       }
     }
   } catch (err) {
