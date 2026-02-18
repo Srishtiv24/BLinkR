@@ -56,7 +56,13 @@ export default function VideoMeetComponent() {
   const [usernameErrorMessage, setUsernameErrorMessage] = React.useState("");
 
   const getPermissions = async () => {
-    try {
+      try {
+        if (!navigator?.mediaDevices?.getUserMedia) {
+          setVideoAvailable(false);
+          setAudioAvailable(false);
+          setScreenAvailable(false);
+          return;
+        }
       const userMediaStream = await navigator.mediaDevices.getUserMedia({
         //video audio
         video: true,
@@ -89,6 +95,7 @@ export default function VideoMeetComponent() {
 
   let getUserMedia = () => {
     if ((video && videoAvailable) || (audio && audioAvailable)) {
+      if (!navigator?.mediaDevices?.getUserMedia) return;
       navigator.mediaDevices
         .getUserMedia({ video: video, audio: audio })
         .then(getUserMediaSuccess) //update audio/vodeo status on/off in all devices connected in network
