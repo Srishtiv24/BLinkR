@@ -66,7 +66,7 @@ export default function VideoMeetComponent() {
           autoGainControl: true,
         },
       });
-      setScreenAvailable(!!navigator?.mediaDevices?.getDisplayMedia);
+      setScreenAvailable(typeof navigator?.mediaDevices?.getDisplayMedia === "function");
       if (userMediaStream) {
         window.localStream = userMediaStream; //for gloabal access , makes it accessible anywhere in app (not just inside this component).
         if (localVideoRef.current) {
@@ -417,9 +417,10 @@ export default function VideoMeetComponent() {
   useEffect(() => {
     if (screen === true) {
       getDisplayMedia();
+    } else if (screen === false) {
+      getUserMedia();
     }
   }, [screen]);
-  
 
   let handleVideo = () => setVideo(!video);
   let handleAudio = () => setAudio(!audio);
