@@ -1,5 +1,5 @@
 import React,{useState} from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate} from "react-router-dom";
 import axios from "axios";
 import httpStatus from "http-status";
 import server from "../enviornment";
@@ -21,6 +21,8 @@ import IconButton from "@mui/material/IconButton";
 import Snackbar from "@mui/material/Snackbar";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
+import Link from "@mui/material/Link";
+
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -67,15 +69,15 @@ const Container = styled(Stack)(({ theme }) => ({
 export default function ForgotPassword(props) {
   let navigate = useNavigate();
 
-  const [email, setEmail] = React.useState("");
+  const [email, setEmail] = useState("");
 
-  const [message, setMessage] = React.useState("");
+  const [message, setMessage] = useState("");
   const [resetLink, setResetLink] = useState("");
-  const [open, setOpen] = React.useState(false);
-  const [severity, setSeverity] = React.useState("success");
+  const [open, setOpen] = useState(false);
+  const [severity, setSeverity] = useState("success");
 
-  const [emailError, setEmailError] = React.useState(false);
-  const [emailErrorMessage, setEmailErrorMessage] = React.useState("");
+  const [emailError, setEmailError] = useState(false);
+  const [emailErrorMessage, setEmailErrorMessage] = useState("");
 
   const client = axios.create({
     baseURL: `${server}/api/v1/users`,
