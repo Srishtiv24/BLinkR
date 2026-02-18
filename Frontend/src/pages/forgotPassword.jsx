@@ -95,7 +95,6 @@ export default function ForgotPassword(props) {
         setSeverity("success");
         if (response.data.resetLink) {
           setResetLink(response.data.resetLink);
-          setSeverity("");
         }
         setOpen(true);
       }
@@ -232,8 +231,8 @@ export default function ForgotPassword(props) {
             <ErrorIcon sx={{ color: "white" }} />
           )}
           <Typography variant="body1">
-            {message}
-            {resetLink && <Link href={resetLink}>Reset Password</Link>}
+            {message} 
+            {resetLink && <Link href={resetLink}  underline="always">Reset Password</Link>}
           </Typography>
         </Box>
       </Snackbar>
