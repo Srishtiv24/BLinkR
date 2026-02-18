@@ -156,7 +156,7 @@ export const AuthProvider = ({ children }) => {
           const fromPath = sessionStorage.getItem("redirectAfterLogin");
           if (fromPath && /^\/[a-zA-Z0-9._-]+-room$/.test(fromPath)) {
             router(fromPath);
-          }else if (location.pathname === "/auth" || location.pathname === "/") { router("/home"); }
+          }else if (location.pathname === "/auth" ) { router("/home"); }
         } catch (err) {
           console.error("Failed to get Auth0 access token", err);
         }
