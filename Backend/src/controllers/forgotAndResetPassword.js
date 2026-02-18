@@ -88,7 +88,7 @@ export const forgotPassword = async (req, res) => {
       // free-tier hosting (SMTP blocked)
       {
         return res.status(httpStatus.OK).json({
-          message: "Email sending disabled in free-tier of Render. Use reset link directly.",
+          message: "Email sending disabled in free-tier of Render. Use reset link directly ",
           resetLink: resetLink
         });
         

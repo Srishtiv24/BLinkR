@@ -19,6 +19,8 @@ import ColorModeSelect from "./components/ColorModeSelect";
 import Snackbar from "@mui/material/Snackbar";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import IconButton from "@mui/material/IconButton";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -97,7 +99,7 @@ export default function ResetnewPassword(props) {
         confirmPassword:confirmPassword
       });
       if (response.status === httpStatus.OK) {
-        setMessage(response.data.message+" You may now close this tab and log in with your new password");
+        setMessage(response.data.message+" You may now go back & log in with your new password");
         setOpen(true);
         setSeverity("success");
         setTimeout(() => navigate("/auth"), 30000);
@@ -161,10 +163,19 @@ export default function ResetnewPassword(props) {
     <AppTheme {...props}>
       <CssBaseline enableColorScheme />
       <ResetnewPasswordContainer direction="column" justifyContent="space-between">
-
+      <IconButton
+          style={{ backgroundColor: "transparent" }}
+          onClick={() => {
+            navigate("/auth");
+          }}
+          sx={{ position: "fixed", top: "1rem", left: "1rem" }}
+        >
+          <ArrowBackIcon />
+        </IconButton>
         <ColorModeSelect
           sx={{ position: "fixed", top: "1rem", right: "1rem" }}
         />
+
 
         <Card variant="outlined">
           <div>
