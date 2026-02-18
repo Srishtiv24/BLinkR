@@ -66,8 +66,11 @@ export default function VideoMeetComponent() {
           autoGainControl: true,
         },
       });
-      if (navigator.mediaDevices.getDisplayMedia) {
-        //share screen
+      if (
+        navigator &&
+        navigator.mediaDevices &&
+        navigator.mediaDevices.getDisplayMedia
+      ) {
         setScreenAvailable(true);
       } else {
         setScreenAvailable(false);
@@ -185,28 +188,28 @@ export default function VideoMeetComponent() {
       return;
     }
 
-      if (signal.sdp) {
-        const desc = new RTCSessionDescription(signal.sdp);
+    if (signal.sdp) {
+      const desc = new RTCSessionDescription(signal.sdp);
 
-        if (desc.type === "offer") {
-          // Handle incoming offer
+      if (desc.type === "offer") {
+        // Handle incoming offer
+        await peer.setRemoteDescription(desc);
+        const answer = await peer.createAnswer();
+        await peer.setLocalDescription(answer);
+        socketRef.current.emit(
+          "signal",
+          fromId,
+          JSON.stringify({ sdp: answer })
+        );
+      } else if (desc.type === "answer") {
+        // Handle incoming answer
+        if (peer.signalingState === "have-local-offer") {
           await peer.setRemoteDescription(desc);
-          const answer = await peer.createAnswer();
-          await peer.setLocalDescription(answer);
-          socketRef.current.emit(
-            "signal",
-            fromId,
-            JSON.stringify({ sdp: answer })
-          );
-        } else if (desc.type === "answer") {
-          // Handle incoming answer
-          if (peer.signalingState === "have-local-offer") {
-            await peer.setRemoteDescription(desc);
-          } else {
-            console.warn("Unexpected answer in state:", peer.signalingState);
-          }
+        } else {
+          console.warn("Unexpected answer in state:", peer.signalingState);
         }
       }
+    }
 
     if (signal.ice) {
       try {
@@ -251,15 +254,13 @@ export default function VideoMeetComponent() {
       socketRef.current.on("chat-message", addMessage);
 
       socketRef.current.on("user-left", (id, diffTime) => {
-
         if (connections.current[id]) {
           connections.current[id].close();
           delete connections.current[id];
         }
-      
+
         setVideos((videos) => videos.filter((video) => video.socketId !== id));
       });
-      
 
       socketRef.current.on("user-joined", async (id, clients) => {
         console.log("New user joined:", id, "All clients:", clients);
@@ -391,30 +392,44 @@ export default function VideoMeetComponent() {
     }
   };
   let getDisplayMedia = async () => {
-    if (!screen || !navigator.mediaDevices.getDisplayMedia) return;
-  
+    // SAFETY CHECK
+    if (
+      !screen ||
+      !navigator ||
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getDisplayMedia
+    ) {
+      console.warn("Screen sharing not supported in this browser/environment");
+      setScreen(false);
+      return;
+    }
+
     try {
       const screenStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
       });
-  
-      const audioStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
-  
+
+      let audioStream = null;
+
+      try {
+        audioStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+      } catch (err) {
+        console.warn("Audio capture not available");
+      }
+
       const combinedStream = new MediaStream([
         ...screenStream.getVideoTracks(),
-        ...audioStream.getAudioTracks(),
+        ...(audioStream ? audioStream.getAudioTracks() : []),
       ]);
-  
+
       getDisplayMediaSuccess(combinedStream);
-  
     } catch (err) {
       console.log("Screen share error:", err);
       setScreen(false);
     }
   };
-  
 
   useEffect(() => {
     if (screen !== undefined) {
@@ -440,21 +455,21 @@ export default function VideoMeetComponent() {
       Object.values(connections.current).forEach((peer) => {
         peer.close();
       });
-  
+
       connections.current = {};
-  
+
       // Disconnect socket
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
-  
+
       // Stop media tracks
       if (window.localStream) {
-        window.localStream.getTracks().forEach(track => track.stop());
+        window.localStream.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
-  
+
   let handleEndCall = () => {
     try {
       let tracks = localVideoRef.current.srcObject.getTracks();
@@ -472,11 +487,11 @@ export default function VideoMeetComponent() {
   let sendMessage = () => {
     const cleaned = message.trim();
     if (!cleaned) return;
-  
+
     socketRef.current.emit("chat-message", cleaned, username);
     setMessage("");
   };
-  
+
   const validateInputs = () => {
     let isValid = true;
     if (!username) {
@@ -619,8 +634,11 @@ export default function VideoMeetComponent() {
               </IconButton>
               {screenAvailable === true && (
                 <IconButton onClick={handleScreen}>
-                 {screen === true ? <StopScreenShareIcon /> : <ScreenShareIcon />}
-
+                  {screen === true ? (
+                    <StopScreenShareIcon />
+                  ) : (
+                    <ScreenShareIcon />
+                  )}
                 </IconButton>
               )}
               <Badge badgeContent={newMessages} color="secondary">
@@ -638,7 +656,7 @@ export default function VideoMeetComponent() {
             <div className={styles.conferenceView}>
               {videos.map((video) => (
                 <video
-                key={video.socketId}
+                  key={video.socketId}
                   data-socket={video.socketId}
                   ref={(ref) => {
                     if (ref && video.stream) {
