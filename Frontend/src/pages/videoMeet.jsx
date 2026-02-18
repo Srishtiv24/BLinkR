@@ -43,7 +43,7 @@ export default function VideoMeetComponent() {
   let [audio, setAudio] = useState(); //bool
   let [screen, setScreen] = useState();
   let [showModal, setModal] = useState(false);
-  let [screenAvailable, setScreenAvailable] = useState();
+  let [screenAvailable, setScreenAvailable] = useState(false);
   let [messages, setMessages] = useState([]);
   let [message, setMessage] = useState("");
   let [newMessages, setNewMessages] = useState(0);
@@ -66,15 +66,7 @@ export default function VideoMeetComponent() {
           autoGainControl: true,
         },
       });
-      if (
-        navigator &&
-        navigator.mediaDevices &&
-        navigator.mediaDevices.getDisplayMedia
-      ) {
-        setScreenAvailable(true);
-      } else {
-        setScreenAvailable(false);
-      }
+      setScreenAvailable(!!navigator?.mediaDevices?.getDisplayMedia);
       if (userMediaStream) {
         window.localStream = userMediaStream; //for gloabal access , makes it accessible anywhere in app (not just inside this component).
         if (localVideoRef.current) {
@@ -362,13 +354,11 @@ export default function VideoMeetComponent() {
     // 2. set new stream
     window.localStream = stream;
     localVideoRef.current.srcObject = stream;
-    setScreenAvailable(true);
 
     // 3.If the track end unexpectedly, mark screen as off and replace with a fake stream that looks like a black screen and silence, so the connection doesn’t break.
     stream.getTracks().forEach((track) => {
       track.onended = async () => {
         setScreen(false);
-        setScreenAvailable(false);
         const blackSilence = ({ width = 640, height = 480 } = {}) => {
           return new MediaStream([black({ width, height }), silence()]);
         };
@@ -392,14 +382,8 @@ export default function VideoMeetComponent() {
     }
   };
   let getDisplayMedia = async () => {
-    // SAFETY CHECK
-    if (
-      !screen ||
-      !navigator ||
-      !navigator.mediaDevices ||
-      !navigator.mediaDevices.getDisplayMedia
-    ) {
-      console.warn("Screen sharing not supported in this browser/environment");
+    if (!screen || !navigator?.mediaDevices?.getDisplayMedia) {
+      console.warn("Screen sharing not supported");
       setScreen(false);
       return;
     }
@@ -430,12 +414,12 @@ export default function VideoMeetComponent() {
       setScreen(false);
     }
   };
-
   useEffect(() => {
-    if (screen !== undefined) {
+    if (screen === true) {
       getDisplayMedia();
     }
   }, [screen]);
+  
 
   let handleVideo = () => setVideo(!video);
   let handleAudio = () => setAudio(!audio);
