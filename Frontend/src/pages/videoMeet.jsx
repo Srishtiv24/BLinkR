@@ -501,7 +501,7 @@ export default function VideoMeetComponent() {
     return isValid;
   };
   useEffect(() => {
-    if (location.state?.copied) {
+    if (location.state?.isGuest) {
       setOpen(true);
     }
   }, [location.state]);
