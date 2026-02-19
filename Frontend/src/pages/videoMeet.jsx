@@ -51,18 +51,19 @@ export default function VideoMeetComponent() {
   let [askForUsername, setAskForUsername] = useState(true);
   let [username, setUsername] = useState("");
   let [videos, setVideos] = useState([]);
+  let [open, setOpen] = useState(false);
 
   const [usernameError, setUsernameError] = React.useState(false);
   const [usernameErrorMessage, setUsernameErrorMessage] = React.useState("");
 
   const getPermissions = async () => {
-      try {
-        if (!navigator?.mediaDevices?.getUserMedia) {
-          setVideoAvailable(false);
-          setAudioAvailable(false);
-          setScreenAvailable(false);
-          return;
-        }
+    try {
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        setVideoAvailable(false);
+        setAudioAvailable(false);
+        setScreenAvailable(false);
+        return;
+      }
       const userMediaStream = await navigator.mediaDevices.getUserMedia({
         //video audio
         video: true,
@@ -72,7 +73,9 @@ export default function VideoMeetComponent() {
           autoGainControl: true,
         },
       });
-      setScreenAvailable(typeof navigator?.mediaDevices?.getDisplayMedia === "function");
+      setScreenAvailable(
+        typeof navigator?.mediaDevices?.getDisplayMedia === "function"
+      );
       if (userMediaStream) {
         window.localStream = userMediaStream; //for gloabal access , makes it accessible anywhere in app (not just inside this component).
         if (localVideoRef.current) {
@@ -497,6 +500,11 @@ export default function VideoMeetComponent() {
 
     return isValid;
   };
+  useEffect(() => {
+    if (location.state?.copied) {
+      setOpen(true);
+    }
+  }, [location.state]);
   return (
     <AppTheme>
       <CssBaseline enableColorScheme />
@@ -553,8 +561,7 @@ export default function VideoMeetComponent() {
               <video ref={localVideoRef} autoPlay />
             </div>
           </div>
-        )
-        : (
+        ) : (
           <div className={styles.meetVideoContainer}>
             <ColorModeSelect
               sx={{ position: "fixed", top: "1rem", right: "1rem" }}
@@ -662,12 +669,13 @@ export default function VideoMeetComponent() {
             </div>
           </div>
         )}
-              </div>
-
-              { location.state?.isGuest && <Snackbar open={open} autoHideDuration={4000} onClose={() => setOpen(false)} message={"Meeting link copied to clipboard!"  }/>}
-
-
-  
+      </div>
+      <Snackbar
+        open={open}
+        autoHideDuration={2000}
+        onClose={() => setOpen(false)}
+        message={"Meeting link copied to clipboard!"}
+      />
     </AppTheme>
   );
 }
