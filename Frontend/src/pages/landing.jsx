@@ -11,7 +11,7 @@ export default function LandingPage() {
     (e) => { e.preventDefault();
        // prevent default navigation 
        const meetLink = "/guest/" + Math.random().toString(36).substring(2, 8) + "-guestRoom"; 
-       navigator.clipboard.writeText(meetLink); 
+       navigator.clipboard.writeText(`${window.location.origin}${meetLink}`); 
        // navigate programmatically with state flag
         navigate(meetLink, { state: { isGuest: true } }); };
   return (
