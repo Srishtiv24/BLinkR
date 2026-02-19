@@ -553,7 +553,8 @@ export default function VideoMeetComponent() {
               <video ref={localVideoRef} autoPlay />
             </div>
           </div>
-        ) : (
+        )
+        : (
           <div className={styles.meetVideoContainer}>
             <ColorModeSelect
               sx={{ position: "fixed", top: "1rem", right: "1rem" }}
@@ -661,7 +662,12 @@ export default function VideoMeetComponent() {
             </div>
           </div>
         )}
-      </div>
+              </div>
+
+              { location.state?.isGuest && <Snackbar open={open} autoHideDuration={4000} onClose={() => setOpen(false)} message={"Meeting link copied to clipboard!"  }/>}
+
+
+  
     </AppTheme>
   );
 }

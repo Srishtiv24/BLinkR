@@ -1,14 +1,19 @@
-import React, { useContext } from "react";
+import React, { useContext , useState } from "react";
 import "../App.css";
-import { Link } from "react-router-dom";
+import { Link,useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 
 export default function LandingPage() {
   const { isLoggedIn, handleLogout } = useContext(AuthContext);
+   const navigate=useNavigate();
 
-  const guestMeetLink = () => {
-    return "/guest/"+Math.random().toString(36).substring(2, 8)+"-guestRoom";
-  };
+   const guestMeetLink =
+    (e) => { e.preventDefault();
+       // prevent default navigation 
+       const meetLink = "/guest/" + Math.random().toString(36).substring(2, 8) + "-guestRoom"; 
+       navigator.clipboard.writeText(meetLink); 
+       // navigate programmatically with state flag
+        navigate(meetLink, { state: { isGuest: true } }); };
   return (
     <div className="landingPageContainer">
       <nav>
@@ -17,7 +22,7 @@ export default function LandingPage() {
         </div>
         {!isLoggedIn() ? (
           <div className="navList">
-            <Link to={guestMeetLink()}>Join as Guest</Link>
+            <Link onClick={guestMeetLink}>Join as Guest</Link>
             <Link to={"/auth"}>Register</Link>
             <div role="button">
               <Link to={"/auth"}>Login</Link>
