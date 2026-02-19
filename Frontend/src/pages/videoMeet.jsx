@@ -1,5 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import server from "../enviornment";
+import { io } from "socket.io-client";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import styles from "../styles/videoMeet.module.css";
 import TextField from "@mui/material/TextField";
@@ -20,8 +22,7 @@ import ChatIcon from "@mui/icons-material/Chat";
 import SendIcon from "@mui/icons-material/Send";
 import QuestionAnswerRoundedIcon from "@mui/icons-material/QuestionAnswerRounded";
 import FormControl from "@mui/material/FormControl";
-import { io } from "socket.io-client";
-import { useNavigate, useLocation } from "react-router-dom";
+import Snackbar from "@mui/material/Snackbar";
 
 const server_url = `${server}`;
 
@@ -50,7 +51,6 @@ export default function VideoMeetComponent() {
   let [askForUsername, setAskForUsername] = useState(true);
   let [username, setUsername] = useState("");
   let [videos, setVideos] = useState([]);
-  let [duration, setDuration] = useState();
 
   const [usernameError, setUsernameError] = React.useState(false);
   const [usernameErrorMessage, setUsernameErrorMessage] = React.useState("");
