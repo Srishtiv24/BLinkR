@@ -479,6 +479,7 @@ export default function VideoMeetComponent() {
       routeTo("/home");
     }
   };
+  
   let sendMessage = () => {
     const cleaned = message.trim();
     if (!cleaned) return;

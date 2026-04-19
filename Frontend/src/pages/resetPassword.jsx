@@ -92,7 +92,7 @@ export default function ResetnewPassword(props) {
   
   const resetPasswordFormSubmit = async () => {
     try {
-      let response = await client.post("/reset_password", {
+      let response = await client.post("/reset-password", {
         //data to be sent to backend
         token:token,
         newPassword:newPassword,

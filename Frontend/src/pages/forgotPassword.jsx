@@ -85,7 +85,7 @@ export default function ForgotPassword(props) {
 
   const forgotPasswordFormSubmit = async () => {
     try {
-      let response = await client.post("/forgot_password", {
+      let response = await client.post("/forgot-password", {
         //data to be sent to backend
         email: email,
       });

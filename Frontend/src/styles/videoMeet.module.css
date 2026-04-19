@@ -46,12 +46,14 @@ padding:0.7rem;
 { position: absolute;
   right:1.5vh;
   color:white;
-  background-color: #212020;
+  background-color: #121212;
   border-radius: 10px;
   height:79vh;
   bottom:10vh;
   width:22vw;
-  padding: 1rem;
+  padding: 1.4rem;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.316);
+
 }
 .chatRoom:hover
 {
@@ -103,6 +105,12 @@ border-radius:10px;
 .preview
 {
     padding:1rem;
+}
+
+.btnAI{
+  background-color: #893bff;
+  color: #fff;
+  font-size: 0.8rem;
 }
 
 @media (max-width: 768px) {

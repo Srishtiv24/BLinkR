@@ -4,7 +4,7 @@ import LandingPage from './pages/landing';
 import Authentication from './pages/authentication';
 import { AuthProvider } from './contexts/AuthContext';
 import { HomeProvider } from './contexts/HomeContext';
-import VideoMeetComponent from './pages/videoMeet';
+import VideoMeetComponent from './pages/videomeet/videoMeet2';
 import HomeComponent from './pages/home';
 import HistoryComponent from './pages/history';
 import ProtectedRoute from './utils/protectedRoute'

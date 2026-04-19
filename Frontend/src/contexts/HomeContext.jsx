@@ -12,7 +12,7 @@ const client = axios.create({
 export const HomeProvider = ({ children }) => {
   const getHistoryOfUser = async () => {
     try {
-      let request = await client.get("/get_all_activity", {
+      let request = await client.get("/activities", {
         // params: { //for get req wrap in params
         //   token: localStorage.getItem("token"),
         // },
@@ -26,7 +26,7 @@ export const HomeProvider = ({ children }) => {
   
   const addToUserHistory = async(meetingCode) => {
     try {
-         let request= await client.post("/add_to_activity",{
+         let request= await client.post("/activities",{
            // token: localStorage.getItem("token"),
             meetingCode:meetingCode
          },
@@ -40,7 +40,7 @@ export const HomeProvider = ({ children }) => {
 
   const clearHistoryOfUser = async() => {
     try {
-         let request= await client.get("/clear_all_activity", {
+         let request= await client.delete("/activities", {
           // params: { //for get req wrap in params
           //   token: localStorage.getItem("token"),
           // }

@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();
 }
-
 /*
 {
    "token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTkxMDcwNmNmZTI2ZDU2MmI0MzYyZTMiLCJuYW1lIjoiU3Jpc2h0aSBWZXJtYSIsImlhdCI6MTc3MTExMzE2NiwiZXhwIjoxNzcxMTEzNDY2fQ.JpGhFGtQnjVaC2Hdtkqmr-fGDes_nRKUl3QWfwOoJ0A",
