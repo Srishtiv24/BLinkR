@@ -15,7 +15,7 @@ const client = axios.create({
 export const AuthProvider = ({ children }) => {
   //children is the wrapped comp inside AuthProvider
   //since authentication is shared by all routes thats why we need to wrap all other routes inside it
-  //if use auth in pure js , how we apply auth to all routes , using middleware
+  //if use auth in pure js , we apply auth to all routes , using middleware
 
   const authContext = useContext(AuthContext);
   const [userData, setUserData] = useState(authContext); //ui should update acc to  login/reg so using use state
@@ -26,10 +26,11 @@ export const AuthProvider = ({ children }) => {
     loginWithRedirect,
     isAuthenticated,
     user,
-    getAccessTokenSilently,
+    getAccessTokenSilently,//login user on refresh when states are lost like useEffect we are doing for jwt auth 
     logout,
   } = useAuth0();
 
+  //JWT Auth
   const handleRegister = async (name, email, password) => {
     try {
       let request = await client.post("/register", {
@@ -98,7 +99,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  //redhydration on  refresh
+  //redhydration of Jwt Auth on refresh
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -121,6 +122,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  //Auth0 Auth
   const handleAuth0Login = async () => {
     try {
       await loginWithRedirect({

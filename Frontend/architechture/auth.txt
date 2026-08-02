@@ -1,0 +1,35 @@
+User opens app
+      │
+      ▼
+AuthProvider loads
+      │
+      ▼
+Check localStorage for JWT
+      │
+      ├── Valid Token
+      │       │
+      │       ▼
+      │ Restore user
+      │
+      └── No Token
+              │
+              ▼
+User logs in
+      │
+      ▼
+Backend/Auth0 authenticates
+      │
+      ▼
+JWT stored in localStorage
+      │
+      ▼
+Update Context
+      │
+      ▼
+All components get authentication state
+
+Currently, I store the JWT in localStorage and restore the user by decoding it on page refresh. For a production application, 
+I would improve this by storing the token in a secure HttpOnly cookie instead of localStorage to reduce XSS risk. 
+
+After a refresh, I would call a protected endpoint like /me so the backend can verify the token and return
+the latest user information before restoring the authentication state.
