@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
 
   const authContext = useContext(AuthContext);
   const [userData, setUserData] = useState(authContext); //ui should update acc to  login/reg so using use state
-  const router = useNavigate(); //for redirect
+  const router = useNavigate(); //for redirects
   const location=useLocation();
 
   const {
