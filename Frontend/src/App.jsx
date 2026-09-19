@@ -4,13 +4,14 @@ import LandingPage from './pages/landing';
 import Authentication from './pages/authentication';
 import { AuthProvider } from './contexts/AuthContext';
 import { HomeProvider } from './contexts/HomeContext';
-import VideoMeetComponent from './pages/videomeet/videoMeet2';
+import VideoMeetComponent from './pages/videomeet/videoMeet';
 import HomeComponent from './pages/home';
 import HistoryComponent from './pages/history';
 import ProtectedRoute from './utils/protectedRoute'
 import Auth0Callback from './pages/auth0Callback';
 import ForgotPassword from './pages/forgotPassword';
 import ResetPassword from './pages/resetPassword';
+import  AIInterviewer from './pages/AIInterviewer';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/auth/callback" element={<Auth0Callback />} /> 
         <Route path="/forgot-password" element={<ForgotPassword/>} /> 
         <Route path="/reset-password" element={<ResetPassword/>} /> 
+        <Route path="/ai" element={<AIInterviewer/>} /> 
       </Routes>
       </HomeProvider>
       </AuthProvider>
