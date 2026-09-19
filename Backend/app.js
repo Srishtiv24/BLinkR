@@ -10,6 +10,7 @@ import cors from "cors";
 import { connectToSocket } from "./src/controllers/socketManager.js";
 import userRoutes from "./src/routes/user.routes.js";
 import resumeRoutes from "./src/routes/resume.routes.js";
+import interviewRoutes from "./src/routes/interview.routes.js";
 
 const app = express();
 const server = createServer(app); //Express app handles HTTP requests,but now server is the actual HTTP server that can listen on a port because  WebSockets (Socket.IO) need the raw HTTP server object
@@ -23,6 +24,7 @@ app.use(express.urlencoded({ limit: "40kb", extended: true })); //for data parse
 
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/resume", resumeRoutes);
+app.use("/api/interview", interviewRoutes);
 
 app.get("/", (req, res) => {
   return res.send("works");

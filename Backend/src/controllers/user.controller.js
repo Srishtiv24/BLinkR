@@ -1,4 +1,4 @@
-import {httpStatus} from "http-status";
+import httpStatus from "http-status";
 import bcrypt from "bcrypt";
 //import crypto from "crypto";
 import jwt from "jsonwebtoken";

@@ -4,6 +4,7 @@ import { useState, useContext, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import { HomeContext } from "../contexts/HomeContext";
+import styles from "../styles/homeComponent.module.css";
 
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -15,7 +16,6 @@ import AppTheme from "./components/AppTheme";
 import CssBaseline from "@mui/material/CssBaseline";
 import HistoryIcon from "@mui/icons-material/History";
 import LogoutIcon from "@mui/icons-material/Logout";
-import styles from "../styles/homeComponent.module.css";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import FormControl from "@mui/material/FormControl";
 import TextField from "@mui/material/TextField";
@@ -30,6 +30,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Divider from "@mui/material/Divider";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import Typed from "typed.js";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 
 function Welcome() {
   const { userData } = useContext(AuthContext);
@@ -51,6 +52,7 @@ function Welcome() {
         backDelay: 2000,
         loop: true,
       });
+
       return () => typed.destroy();
     }
   }, [userData]);
@@ -75,9 +77,12 @@ function HomeComponent() {
 
   const generateMeetingCode = () => {
     const randomCode = Math.random().toString(36).substring(2, 8);
+
     setMeetingCode(randomCode);
     setHelperText("Meeting link copied to clipboard!");
+
     const meetLink = `${window.location.origin}/${randomCode}-room`;
+
     navigator.clipboard.writeText(meetLink);
   };
 
@@ -86,10 +91,15 @@ function HomeComponent() {
     navigate(`/${meetingCode}-room`);
   };
 
+  const handleAIInterviewer = () => {
+    navigate("/ai");
+  };
+
   return (
     <div>
       <AppTheme>
         <CssBaseline enableColorScheme />
+
         <div className="navBar">
           <Box sx={{ flexGrow: 1 }}>
             <AppBar
@@ -113,6 +123,7 @@ function HomeComponent() {
                 >
                   <ArrowBackIcon />
                 </IconButton>
+
                 <Typography
                   variant="h5"
                   component="div"
@@ -120,6 +131,7 @@ function HomeComponent() {
                 >
                   BLinkR
                 </Typography>
+
                 {!isMobile ? (
                   <div className={styles.navBtn}>
                     <IconButton
@@ -133,6 +145,7 @@ function HomeComponent() {
                       <HistoryIcon />
                       History
                     </IconButton>
+
                     <IconButton
                       style={{
                         fontSize: "1rem",
@@ -144,6 +157,7 @@ function HomeComponent() {
                       <LogoutIcon />
                       Logout
                     </IconButton>
+
                     <ColorModeSelect
                       style={{
                         fontSize: "1rem",
@@ -164,6 +178,7 @@ function HomeComponent() {
                     <MenuIcon />
                   </IconButton>
                 )}
+
                 <Drawer
                   anchor="right"
                   open={openDrawer}
@@ -204,6 +219,7 @@ function HomeComponent() {
                           <ListItemIcon sx={{ minWidth: 40 }}>
                             <HistoryIcon fontSize="medium" />
                           </ListItemIcon>
+
                           <ListItemText primary="History" />
                         </ListItemButton>
                       </ListItem>
@@ -219,6 +235,7 @@ function HomeComponent() {
                           <ListItemIcon sx={{ minWidth: 40 }}>
                             <LogoutIcon fontSize="medium" />
                           </ListItemIcon>
+
                           <ListItemText primary="Logout" />
                         </ListItemButton>
                       </ListItem>
@@ -243,8 +260,11 @@ function HomeComponent() {
 
           <div className={styles.rightPanel}>
             <Welcome />
+
             <h1>Interview anyone, anywhere — with clarity & ease</h1>
+
             <br />
+
             <div>
               <div className={styles.codeContainer}>
                 <FormControl>
@@ -262,18 +282,18 @@ function HomeComponent() {
                     sx={{
                       "& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline":
                         {
-                          borderColor: "#E53935", // border color when error
+                          borderColor: "#E53935",
                         },
                       "& .MuiFormLabel-root.Mui-error": {
-                        color: "#E53935", // label color when error
+                        color: "#E53935",
                       },
                       "& .MuiFormHelperText-root.Mui-error": {
-                        color: "#E53935", // helper text color when error
+                        color: "#E53935",
                       },
                     }}
                   />
-               
                 </FormControl>
+
                 <div className={styles.codeBtn}>
                   <Button
                     onClick={generateMeetingCode}
@@ -284,16 +304,35 @@ function HomeComponent() {
                   >
                     Generate Code
                   </Button>
+
                   <Button
-                    onClick={() => {
-                      handleJoinVideoCall();
-                    }}
+                    onClick={handleJoinVideoCall}
                     variant="contained"
                     style={{ fontWeight: 600 }}
                   >
                     Join
                   </Button>
                 </div>
+              </div>
+              <div className={styles.aiInterview}>
+                <p style={{margin:4,opacity:0.4}}>OR</p>
+                <Button
+                  onClick={handleAIInterviewer}
+                  variant="outlined"
+                  startIcon={<AutoAwesomeIcon />}
+                  sx={{
+                    color: "#893bff",
+                    borderColor: "#893bff",
+                    fontWeight: 600,
+                    textTransform: "none",
+                    "&:hover": {
+                      borderColor: "#893bff",
+                      backgroundColor: "rgba(137, 59, 255, 0.08)",
+                    },
+                  }}
+                >
+                  Start AI Interview
+                </Button>
               </div>
             </div>
           </div>
@@ -304,13 +343,3 @@ function HomeComponent() {
 }
 
 export default withAuth(HomeComponent);
-
-/*hof
-- React actually mounts the AuthComponent (the wrapper returned by withAuth).
-- AuthComponent receives props = { title: "Dashboard" }.
-- AuthComponent runs its useEffect → checks authentication.
-- If authenticated → it renders <WrappedComponent {...props} />.
-- That means it renders <HomeComponent title="Dashboard" />.
-- So HomeComponent finally sees the title prop and prints Dashboard.
-- If not authenticated → it redirects to /auth, and HomeComponent never mounts.
-*/
