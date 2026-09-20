@@ -315,7 +315,7 @@ function HomeComponent() {
                 </div>
               </div>
               <div className={styles.aiInterview}>
-                <p style={{margin:4,opacity:0.4}}>OR</p>
+                <p style={{margin:4,opacity:0.8}}>OR</p>
                 <Button
                   onClick={handleAIInterviewer}
                   variant="outlined"

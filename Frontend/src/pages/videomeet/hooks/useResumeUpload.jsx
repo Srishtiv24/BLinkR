@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import axios from "axios";
 
 export default function useResumeUpload() {
@@ -8,13 +8,13 @@ export default function useResumeUpload() {
   const [uploadMessage, setUploadMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
 
-  const uploadResume = async (file) => {
+  const uploadResume = useCallback(async (file) => {
     const formData = new FormData();
     formData.append("resume", file); // "resume" matches multer field name
 
     try {
       setLoading(true);
-      setError(null);
+      setErrorMessage(null);
       const res = await axios.post("/api/resume", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -26,41 +26,49 @@ export default function useResumeUpload() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchGeneralizedQuestions = async () => {
-    if (!resumeId) {
-      return;
-    }
-    try {
-      const res = axios.get(`/api/resume/${resumeId}/question`);
-      setQuestions(res.data.questions);
-    } catch (e) {
-      setError("Failed to fetch generalized questions.");
-    }
-  };
-
-  const fetchSkillQuestions = async () => {
-    if (!resumeId) {
-      return;
-    }
-    try {
-      const res = axios.get(`/api/resume/${resumeId}/question/skill`);
-      setQuestions(res.data.questions);
-    } catch (e) {
-      setError("Failed to fetch skill questions.");
-    }
-  };
-
-  const regenerateQuestions = async () => {
+  const fetchGeneralizedQuestions = useCallback(async () => {
     if (!resumeId) return;
     try {
+      setLoading(true);
+      setErrorMessage(null);
+      const res = await axios.get(`/api/resume/${resumeId}/question`);
+      setQuestions(res.data.questions);
+    } catch (e) {
+      setErrorMessage("Failed to fetch generalized questions.");
+    } finally {
+      setLoading(false);
+    }
+  }, [resumeId]);
+
+  const fetchSkillQuestions = useCallback(async () => {
+    if (!resumeId) return;
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      const res = await axios.get(`/api/resume/${resumeId}/question/skill`);
+      setQuestions(res.data.questions);
+    } catch (e) {
+      setErrorMessage("Failed to fetch skill questions.");
+    } finally {
+      setLoading(false);
+    }
+  }, [resumeId]);
+
+  const regenerateQuestions = useCallback(async () => {
+    if (!resumeId) return;
+    try {
+      setLoading(true);
+      setErrorMessage(null);
       const res = await axios.get(`/api/resume/${resumeId}/question/new`);
       setQuestions(res.data.questions);
     } catch (err) {
-      setError("Failed to regenerate questions.");
+      setErrorMessage("Failed to regenerate questions.");
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [resumeId]);
 
   return {
     resumeId,

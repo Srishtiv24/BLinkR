@@ -36,6 +36,12 @@ export default function useMedia({
   };
 
   const getPermissions = async () => {
+    // Reset to "checking" state (undefined) so the UI can show a
+    // pending indicator, e.g. while the user is retrying after a
+    // browser permission prompt.
+    setVideoAvailable(undefined);
+    setAudioAvailable(undefined);
+
     try {
       if (!navigator?.mediaDevices?.getUserMedia) {
         setVideoAvailable(false);
@@ -67,6 +73,62 @@ export default function useMedia({
       }
     } catch (e) {
       console.log(e);
+      // getUserMedia rejects the whole request if EITHER device is
+      // denied/unavailable, even if the other one would have worked.
+      // Fall back to checking each device individually so the UI can
+      // tell the user exactly which permission is missing.
+      let camOk = false;
+      let micOk = false;
+
+      try {
+        const camStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+        camOk = true;
+        camStream.getTracks().forEach((t) => t.stop());
+      } catch {}
+
+      try {
+        const micStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        micOk = true;
+        micStream.getTracks().forEach((t) => t.stop());
+      } catch {}
+
+      setVideoAvailable(camOk);
+      setAudioAvailable(micOk);
+      setScreenAvailable(
+        typeof navigator?.mediaDevices?.getDisplayMedia === "function"
+      );
+
+      if (!camOk && !micOk) return;
+
+      // At least one device works - grab a combined stream (real +
+      // faked-silent/black for whichever is missing) so the preview
+      // and the call still function.
+      try {
+        const tracks = [];
+        if (camOk) {
+          const s = await navigator.mediaDevices.getUserMedia({ video: true });
+          tracks.push(...s.getVideoTracks());
+        } else {
+          tracks.push(black());
+        }
+        if (micOk) {
+          const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+          tracks.push(...s.getAudioTracks());
+        } else {
+          tracks.push(silence());
+        }
+        const mixedStream = new MediaStream(tracks);
+        window.localStream = mixedStream;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = mixedStream;
+        }
+      } catch (err) {
+        console.log(err);
+      }
     }
   };
 
@@ -174,6 +236,7 @@ export default function useMedia({
 
   useEffect(() => {
     getPermissions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -189,4 +252,8 @@ export default function useMedia({
       getUserMedia();
     }
   }, [screen]);
+
+  // Exposed so the entry screen can offer a "Retry" button after a
+  // denied permission prompt, without duplicating this logic.
+  return { requestPermissions: getPermissions };
 }

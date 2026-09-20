@@ -722,6 +722,187 @@
   font-size: 11px;
 }
 
+.overall-band-chip {
+  margin-top: 12px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.overall-band-chip.band-strong {
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+}
+
+.overall-band-chip.band-medium {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+}
+
+.overall-band-chip.band-weak {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
+/* ---------- Strongest / weakest callouts ---------- */
+.callout-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 560px) {
+  .callout-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.callout-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid;
+}
+
+.callout-strong {
+  background: rgba(74, 222, 128, 0.06);
+  border-color: rgba(74, 222, 128, 0.25);
+}
+
+.callout-weak {
+  background: rgba(248, 113, 113, 0.06);
+  border-color: rgba(248, 113, 113, 0.25);
+}
+
+.callout-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.callout-strong .callout-icon {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+}
+
+.callout-weak .callout-icon {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+}
+
+.callout-label {
+  margin: 0 0 2px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #a1a1aa;
+}
+
+.callout-name {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #f4f4f5;
+}
+
+.callout-score {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #d4d4d8;
+}
+
+/* ---------- Radar chart ---------- */
+.feedback-radar-card {
+  background: #131318;
+  border: 1px solid #1f1f27;
+  border-radius: 16px;
+  padding: 28px;
+  text-align: center;
+}
+
+.feedback-radar-card h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  color: #f4f4f5;
+}
+
+.radar-sub {
+  margin: 0 0 8px !important;
+}
+
+.radar-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.radar-svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.radar-axis-label {
+  fill: #a1a1aa;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.radar-legend {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.radar-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #a1a1aa;
+}
+
+.radar-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ---------- Category chip (band label) ---------- */
+.category-chip {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.chip-strong {
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+}
+
+.chip-medium {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+}
+
+.chip-weak {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
 .feedback-summary {
   margin-top: 16px;
   color: #d4d4d8;
@@ -751,7 +932,8 @@
 
 .category-row-top {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 6px;
   font-size: 13px;
 }
@@ -759,6 +941,7 @@
 .category-name {
   font-weight: 600;
   color: #e4e4e7;
+  flex: 1;
 }
 
 .category-score {

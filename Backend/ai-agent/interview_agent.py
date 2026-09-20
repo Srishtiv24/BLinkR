@@ -44,6 +44,7 @@ from livekit.plugins import silero
 from livekit.plugins.google import LLM as GeminiLLM
 from livekit.plugins import openai as lk_openai
 from livekit.plugins.google.beta import GeminiSTT, GeminiTTS
+from livekit.plugins import deepgram
 from livekit.plugins import elevenlabs
 from livekit.agents.llm import FallbackAdapter
 from livekit.agents.tts import FallbackAdapter as TTSFallbackAdapter
@@ -341,10 +342,25 @@ async def entrypoint(ctx: JobContext):
 
     tts_adapter = TTSFallbackAdapter(
         [
-            elevenlabs.TTS(
-                api_key=os.environ["ELEVENLABS_API_KEY"],
-                model="eleven_turbo_v2_5",
+            # Deepgram is primary: $200 free credit on signup, no card
+            # required (~6.6M characters of TTS) — genuinely usable, unlike
+            # Gemini TTS's 3-requests/minute cap. Using TTSv2 (Flux voices)
+            # for "Priya" — Indian-accented English, female.
+            deepgram.TTSv2(
+                api_key=os.environ["DEEPGRAM_API_KEY"],
+                model="flux-priya-en",
             ),
+            # ElevenLabs TEMPORARILY DISABLED: confirmed via direct API test
+            # on 2026-09-19 to be fully exhausted (0/10000 credits remaining),
+            # resets 2026-10-12. Re-enable by uncommenting once that date
+            # passes — no other code changes needed.
+            # elevenlabs.TTS(
+            #     api_key=os.environ["ELEVENLABS_API_KEY"],
+            #     model="eleven_turbo_v2_5",
+            # ),
+            # Gemini TTS: true last resort. Only 3 requests/minute free, so
+            # it'll fail fast under real load, but still better than nothing
+            # if Deepgram itself ever has an outage.
             GeminiTTS(
                 voice_name="Kore",
                 api_key=api_key,
@@ -352,6 +368,12 @@ async def entrypoint(ctx: JobContext):
         ]
     )
     tts_adapter.on("tts_availability_changed", _on_tts_availability_changed)
+
+    # Warm up the TTS connection pool now, before the interview actually
+    # starts, rather than on the candidate's real first turn. This is
+    # specifically to fix a cold-start hiccup we saw: Deepgram's very first
+    # request failed, then subsequent ones worked fine once "warmed up".
+    tts_adapter.prewarm()
 
     session = AgentSession(
         # Dedicated STT stage, hard-locked to English — this is the fix for

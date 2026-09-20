@@ -1,182 +1,991 @@
-
-.meetVideoContainer{
-    position:relative;
-    height:100vh;
-}
-.meetUserVideo
-{   position:absolute;
-    bottom:10vh;
-    height:250px;
-    width:auto;
-    left:1.5vh;
-    border-radius: 20px;
-    border:0.5px solid rgba(0, 0, 0, 0.206);
-}
-.meetUserVideo:hover
-{
-box-shadow: 0 0 10px rgba(255, 255, 255, 0.419);
-}
-.buttonContainer
-{
-    position: absolute;
-    width: 100vw;
-    bottom: 1.5vh;
-    text-align: center;
-    margin: 0.5rem;
+/* ============ Design tokens ============
+   Defined on :root (not .appShell) so the same palette is
+   available on the entry screen too, which renders before
+   .appShell exists. This is the single source of truth for
+   BlinkR's colors - every other rule below should reference
+   these variables rather than hardcoding hex values. */
+   :root {
+    --bg: #0c0c12;
+    --panel: #14141c;
+    --panel-alt: #191922;
+    --border: #262632;
+    --text: #f2f2f6;
+    --text-muted: #9a9aab;
+    --accent: #893bff;
+    --accent-soft: rgba(137, 59, 255, 0.16);
+    --green: #22c55e;
+    --red: #e5484d;
+  }
+  
+  .appShell {
+    height: 100vh;
     display: flex;
-    gap:10px;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+    overflow: hidden;
+  }
+  
+  /* ============ Header ============ */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  
+  .headerLeft,
+  .headerCenter,
+  .headerRight {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  
+  .appName {
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: var(--accent);
+    letter-spacing: 0.01em;
+  }
+  
+  .headerDivider {
+    width: 1px;
+    height: 18px;
+    background: var(--border);
+    margin: 0 0.25rem;
+  }
+  
+  .roomLabel {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+  
+  .statusDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+  }
+  
+  .statusText {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  
+  .timer {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-left: 0.4rem;
+  }
+  
+  .headerIconBtn {
+    color: var(--text-muted) !important;
+  }
+  
+  .avatarCircle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
     justify-content: center;
-}
-.buttonContainer svg
-{
-    font-size: 3.2rem;
-    padding: 0.6rem;
-}
-.conferenceView
-{   display: flex;
-}
-.conferenceView > video
-{ 
-border-radius: 20px;
-width:40vw;
-min-width: 20vw;
-padding:0.7rem;
-}
-.chatRoom
-{ position: absolute;
-  right:1.5vh;
-  color:white;
-  background-color: #121212;
-  border-radius: 10px;
-  height:79vh;
-  bottom:10vh;
-  width:22vw;
-  padding: 1.4rem;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.316);
-
-}
-.chatRoom:hover
-{
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.419);
-}
-.chatContainer
-{
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  
+  /* ============ Main 3-column layout ============ */
+  .mainArea {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+  
+  .panelHeaderRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.4rem;
+  }
+  
+  .panelHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  
+  .panelCloseBtn {
+    color: var(--text-muted) !important;
+  }
+  
+  .panelTitle {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  
+  .panelSubtext {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin: 0.15rem 0 0.75rem;
+  }
+  
+  .emptyText {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+  
+  /* ---- Left sidebar: AI questions ---- */
+  .leftSidebar {
+    width: 300px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .aiTag {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 6px;
+  }
+  
+  .questionTabs,
+  .chatTabs {
+    display: flex;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.75rem;
+  }
+  
+  .tabBtn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.4rem 0.1rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+  
+  .tabBtnActive {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  
+  .questionsList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow-y: auto;
+    flex: 1;
+  }
+  
+  .questionItem {
+    display: flex;
+    gap: 0.6rem;
+    text-align: left;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.65rem 0.75rem;
+    color: var(--text);
+    cursor: pointer;
+  }
+  
+  .questionItem:hover {
+    border-color: var(--accent);
+  }
+  
+  .questionItemAsked {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  
+  .questionNumber {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+  }
+  
+  .questionBody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .questionText {
+    font-size: 0.82rem;
+    line-height: 1.3;
+  }
+  
+  .questionTag {
+    align-self: flex-start;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+  }
+  
+  .addQuestionBtn {
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    background: none;
+    border: 1px dashed var(--accent);
+    color: var(--accent);
+    border-radius: 10px;
+    padding: 0.55rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  
+  .uploadPrompt {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    background: var(--panel-alt);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+  }
+  
+  .questionActionsRow {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+  }
+  
+  .miniActionBtn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  
+  .miniActionBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .loadingRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    margin: 0.4rem 0;
+  }
+  
+  .errorText {
+    color: var(--red);
+    font-size: 0.78rem;
+    margin: 0.3rem 0 0;
+  }
+  
+  /* ---- Center: video area ---- */
+  .centerArea {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    min-width: 0;
+    min-height: 0; /* let children shrink instead of overflowing the page */
+  }
+  
+  .videoGrid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1rem;
+    align-content: start;
+    min-height: 0;
+  }
+  
+  /* When a tile is expanded: the main tile gets a large, prominent
+     presence; every other tile shrinks to a small, fixed-size
+     thumbnail (not stretched to full width) that wraps into a row
+     below it. If there isn't room to fit everything on screen, the
+     whole video area scrolls instead of squeezing tiles to fit.
+     `order` places the main tile first regardless of which tile in
+     the DOM was expanded. This only changes layout/CSS - the
+     underlying <video> elements are never unmounted, so no stream
+     ever restarts. */
+  .videoGridExpanded {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    gap: 0.75rem;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  
+  .videoTileMain {
     position: relative;
-    height:100%;
-}
-.sendingArea
-{
-    position:absolute;
-    bottom:0;
-}
-.chattingArea
-{   height: 80%;
+    background: var(--panel-alt);
+    border: 1px solid var(--accent);
+    border-radius: 16px;
+    overflow: hidden;
+    order: 0;
+    flex: 0 0 100%;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+  }
+  
+  .videoTileMini {
+    position: relative;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    order: 1;
+    flex: 0 0 200px;
+    width: 200px;
+    aspect-ratio: 16 / 10;
+  }
+  
+  .videoTile {
+    position: relative;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 260px;
+  }
+  
+  .videoTileWaiting {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 1rem;
+  }
+  
+  .tileVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .videoTileLabel {
+    position: absolute;
+    top: 0.7rem;
+    left: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 0.25rem 0.6rem;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    z-index: 2;
+  }
+  
+  .liveDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+  
+  .tileControls {
+    position: absolute;
+    bottom: 0.7rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.4rem;
+    z-index: 2;
+  }
+  
+  .tileIconBtn {
+    background: rgba(0, 0, 0, 0.55) !important;
+    color: var(--text) !important;
+  }
+  
+  .expandBtn {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: rgba(0, 0, 0, 0.55);
+    border: none;
+    border-radius: 6px;
+    color: var(--text);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  
+  .videoTile:hover .expandBtn,
+  .videoTileMain:hover .expandBtn,
+  .videoTileMini:hover .expandBtn {
+    opacity: 1;
+  }
+  
+  .expandBtn:hover {
+    background: var(--accent);
+  }
+  
+  /* ---- Right sidebar: chat + participants ---- */
+  .rightSidebar {
+    width: 320px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+  }
+  
+  .chatPanel {
+    display: flex;
+    flex-direction: column;
+    min-height: 320px;
+    flex: 1;
+  }
+  
+  .chatMessages {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding-right: 0.2rem;
+  }
+  
+  .systemMsg {
+    background: var(--panel-alt);
+    border-radius: 10px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.75rem;
+  }
+  
+  .systemLabel {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  
+  .chatBubble {
+    background: var(--panel-alt);
+    border-radius: 10px;
+    padding: 0.5rem 0.7rem;
+    max-width: 90%;
+  }
+  
+  .chatBubbleMine {
+    align-self: flex-end;
+    background: var(--accent);
+  }
+  
+  .chatSender {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 0.15rem;
+  }
+  
+  .chatBubbleMine .chatSender {
+    color: rgba(255, 255, 255, 0.75);
+  }
+  
+  .chatText {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+  
+  .chatInputRow {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+  }
+  
+  .chatInputField {
+    flex: 1;
+  }
+  
+  .sendBtn {
+    color: var(--accent) !important;
+  }
+  
+  .participantsPanel {
+    border-top: 1px solid var(--border);
+    padding-top: 0.75rem;
+  }
+  
+  .participantRow {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0;
+  }
+  
+  .participantAvatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  
+  .participantName {
+    flex: 1;
+    font-size: 0.82rem;
+  }
+  
+  .participantIcon {
+    color: var(--text-muted) !important;
+    font-size: 1rem !important;
+  }
+  
+  /* ============ Bottom control bar ============ */
+  .bottomBar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  
+  .bottomBtn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  
+  .bottomBtn:hover {
+    background: var(--panel-alt);
+    color: var(--text);
+  }
+  
+  .bottomBtn svg {
+    font-size: 1.4rem;
+  }
+  
+  .bottomBtnActive {
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+  
+  .leaveBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 0.55rem 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-left: 0.5rem;
+  }
+  
+  /* ============ Legacy floating chat modal (mobile / bottom-bar toggle) ============ */
+  .chatRoomFloating {
+    position: absolute;
+    right: 1.5vh;
+    bottom: 6rem;
+    color: white;
+    background-color: #121212;
+    border-radius: 10px;
+    height: 60vh;
+    width: 22vw;
+    padding: 1.2rem;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.25);
+    z-index: 30;
+  }
+  
+  .chatContainer {
+    position: relative;
+    height: 100%;
+  }
+  
+  .sendingArea {
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    width: 100%;
+  }
+  
+  .chattingArea {
+    height: 78%;
     overflow-y: scroll;
     padding-block: 0.5rem;
     display: flex;
     flex-direction: column;
-}
-.chatHeading
-{
+  }
+  
+  .chatHeading {
     display: flex;
-    gap:5px;
+    justify-content: space-between;
     align-items: center;
     margin-bottom: 0.5rem;
-}
-
-.msg{
-background-color:#121212;
-width:fit-content ;
-padding:0.5rem;
-border-radius:10px;
-}
-
-.msgSended
-{  align-self: flex-end;
-    padding-right:1rem;
-   
-}
-
-.msgReceived
-{ align-self: flex-start;
+  }
   
-}
-
-.preview
-{
-    padding:1rem;
-}
-
-.btnAI{
-  background-color: #893bff;
-  color: #fff;
-  font-size: 0.8rem;
-}
-
-@media (max-width: 768px) {
-    .meetVideoContainer {
-      position: relative;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-    }
+  .msg {
+    background-color: #121212;
+    width: fit-content;
+    padding: 0.5rem;
+    border-radius: 10px;
+  }
   
-    .meetUserVideo {
+  .msgSended {
+    align-self: flex-end;
+    padding-right: 1rem;
+  }
+  
+  .msgReceived {
+    align-self: flex-start;
+  }
+  
+  /* ============ Entry / join screen ============ */
+  .entryScreen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    padding: 1.5rem;
+  }
+  
+  .entryCard {
+    width: 100%;
+    max-width: 420px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2.25rem 2rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.1rem;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+  }
+  
+  .entryLogoRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .entryLogoRow .appName {
+    font-size: 1.4rem;
+  }
+  
+  .entryHeading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: -0.3rem;
+  }
+  
+  .entryTitle {
+    color: var(--text);
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0;
+    text-align: center;
+  }
+  
+  .entrySubtitle {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin: 0;
+    text-align: center;
+    line-height: 1.4;
+    max-width: 30ch;
+  }
+  
+  .entryVideoFrame {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  
+  .entryVideoOverlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    background: rgba(12, 12, 18, 0.72);
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+  }
+  
+  .entryPreviewControls {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.6rem;
+    z-index: 2;
+  }
+  
+  .entryPreviewBtn {
+    background: rgba(12, 12, 18, 0.65) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+  }
+  
+  .entryPreviewBtn:hover {
+    border-color: var(--accent) !important;
+  }
+  
+  .entryPreviewBtnOff {
+    background: var(--red) !important;
+    color: #fff !important;
+    border-color: var(--red) !important;
+  }
+  
+  .permissionRow {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  .permissionPill {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 0.45rem 0.5rem;
+    border-radius: 9px;
+    border: 1px solid transparent;
+  }
+  
+  .permissionPill em {
+    font-style: normal;
+    font-weight: 700;
+    margin-left: 0.15rem;
+  }
+  
+  .permissionPillChecking {
+    background: var(--panel-alt);
+    border-color: var(--border);
+  }
+  
+  .permissionPillChecking em {
+    color: var(--text);
+  }
+  
+  .permissionPillOk {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.28);
+  }
+  
+  .permissionPillOk em {
+    color: var(--green);
+  }
+  
+  .permissionPillBlocked {
+    background: rgba(229, 72, 77, 0.1);
+    border-color: rgba(229, 72, 77, 0.28);
+  }
+  
+  .permissionPillBlocked em {
+    color: var(--red);
+  }
+  
+  .permissionWarning {
+    width: 100%;
+    background: rgba(229, 72, 77, 0.08);
+    border: 1px solid rgba(229, 72, 77, 0.25);
+    border-radius: 10px;
+    padding: 0.65rem 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+  
+  .permissionWarning p {
+    margin: 0;
+    font-size: 0.73rem;
+    color: var(--text);
+    line-height: 1.4;
+  }
+  
+  .permissionRetryBtn {
+    flex-shrink: 0;
+    text-transform: none !important;
+    white-space: nowrap;
+    font-size: 0.78rem !important;
+    color: var(--accent) !important;
+  }
+  
+  .entryDivider {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    margin: 0.1rem 0;
+  }
+  
+  .entryVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1); /* mirror, like a mirror-view camera preview */
+  }
+  
+  .entryFormControl {
+    width: 100%;
+  }
+  
+  .entryConnectBtn {
+    width: 100%;
+    padding: 0.75rem !important;
+    border-radius: 10px !important;
+    text-transform: none !important;
+    font-size: 0.92rem !important;
+    letter-spacing: 0.01em;
+  }
+  
+  .btnAI {
+    background-color: #893bff;
+    color: #fff;
+    font-size: 0.8rem;
+  }
+  
+  /* ============ Responsive ============ */
+  /* Below these breakpoints there isn't room to permanently reserve
+     space for the side panels, so instead of hiding them outright
+     (which made the Questions/Chat/Participants toggle buttons do
+     nothing), they become slide-in overlay drawers that sit on top
+     of the video area only while open. */
+  @media (max-width: 1100px) {
+    .leftSidebar {
       position: fixed;
-      bottom: 12vh;   /* just above the button bar */
-      left: 1.5vh;
-      height: 140px;
-      width: auto;
-      border-radius: 12px;
-      z-index: 10;    /* ensures it stays visible */
-    }
-  
-    .buttonContainer {
-      position: fixed;
-      bottom: 0;
+      top: 57px; /* header height */
+      bottom: 74px; /* bottom bar height */
       left: 0;
-      width: 100vw;
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      padding: 0.5rem;
-      background: rgba(0,0,0,0.4);
-      z-index: 20;    /* sits above other elements */
-    }
-  
-    .conferenceView {
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      margin-bottom: 14vh; /* leaves space for buttons */
-    }
-  
-    .conferenceView > video {
-      width: 95vw;
-      min-width: unset;
-      padding: 0.5rem;
-    }
-  
-    .chatRoom {
-      position: absolute;
-      bottom: 12vh;   /* above the button bar */
-      right: 0;
-      width: 48vw;
-      height: 40vh;
-      border-radius: 0;
-      z-index: 15;
-    }
-
-    .chatArea{
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    } 
-
-    .chatInput{
-      width:70%;
+      width: min(85vw, 320px);
+      z-index: 40;
+      box-shadow: 12px 0 30px rgba(0, 0, 0, 0.45);
     }
   }
-
   
+  @media (max-width: 900px) {
+    .rightSidebar {
+      position: fixed;
+      top: 57px;
+      bottom: 74px;
+      right: 0;
+      width: min(85vw, 320px);
+      z-index: 40;
+      box-shadow: -12px 0 30px rgba(0, 0, 0, 0.45);
+    }
+  
+    .bottomBtn span {
+      display: none;
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .header {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+  
+    .headerCenter {
+      order: 3;
+      width: 100%;
+      justify-content: flex-start;
+    }
+  
+    .videoGrid {
+      grid-template-columns: 1fr;
+    }
+  
+    .leftSidebar,
+    .rightSidebar {
+      width: 100vw;
+    }
+  }

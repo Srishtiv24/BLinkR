@@ -54,6 +54,106 @@ const BackIcon = () => (
   </svg>
 );
 
+const TrendUpIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+    <polyline points="17 6 23 6 23 12" />
+  </svg>
+);
+
+const TargetIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="6" />
+    <circle cx="12" cy="12" r="2" />
+  </svg>
+);
+
+// ---- Feedback scoring helpers ----
+const scoreBand = (score) => {
+  if (score == null) return "unknown";
+  if (score >= 7.5) return "strong";
+  if (score >= 5) return "medium";
+  return "weak";
+};
+
+const bandColor = { strong: "#4ade80", medium: "#fbbf24", weak: "#f87171", unknown: "#71717a" };
+const bandLabel = { strong: "Strong", medium: "Good", weak: "Needs Work", unknown: "—" };
+
+const overallBand = (score) => {
+  if (score == null) return "unknown";
+  if (score >= 75) return "strong";
+  if (score >= 50) return "medium";
+  return "weak";
+};
+
+// ---- Radar chart: shows the "shape" of strengths/weaknesses at a glance ----
+const RadarChart = ({ categories }) => {
+  const size = 280;
+  const center = size / 2;
+  const maxR = size / 2 - 46; // leave room for axis labels
+  const n = categories.length;
+  if (n < 3) return null; // a radar chart needs at least 3 axes to make visual sense
+
+  const angleFor = (i) => (-90 + (360 / n) * i) * (Math.PI / 180);
+
+  const pointAt = (i, value) => {
+    const angle = angleFor(i);
+    const r = (value / 10) * maxR;
+    return [center + r * Math.cos(angle), center + r * Math.sin(angle)];
+  };
+
+  const gridLevels = [0.25, 0.5, 0.75, 1.0];
+  const dataPoints = categories.map((c, i) => pointAt(i, c.score || 0));
+  const dataPath = dataPoints.map((p) => p.join(",")).join(" ");
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="radar-svg">
+      {/* background grid rings */}
+      {gridLevels.map((level, gi) => {
+        const ringPts = categories
+          .map((_, i) => pointAt(i, level * 10).join(","))
+          .join(" ");
+        return (
+          <polygon
+            key={gi}
+            points={ringPts}
+            fill="none"
+            stroke="#26262f"
+            strokeWidth="1"
+          />
+        );
+      })}
+
+      {/* axis lines + labels */}
+      {categories.map((c, i) => {
+        const [x, y] = pointAt(i, 10);
+        const [lx, ly] = pointAt(i, 12.2); // push labels slightly beyond the outer ring
+        return (
+          <g key={i}>
+            <line x1={center} y1={center} x2={x} y2={y} stroke="#26262f" strokeWidth="1" />
+            <text
+              x={lx}
+              y={ly}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              className="radar-axis-label"
+            >
+              {c.name}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* the actual data shape */}
+      <polygon points={dataPath} fill="rgba(139, 92, 246, 0.25)" stroke="#8b5cf6" strokeWidth="2" />
+      {dataPoints.map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r="4" fill={bandColor[scoreBand(categories[i].score)]} />
+      ))}
+    </svg>
+  );
+};
+
 const BotIcon = ({ size = 40 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
     <rect x="4" y="8" width="16" height="12" rx="3" />
@@ -325,6 +425,14 @@ const AIInterviewer = ({ candidateName: propName, role: propRole, onEnd }) => {
     const categories = Array.isArray(feedback.categories) ? feedback.categories : [];
     const circumference = 2 * Math.PI * 54;
     const filled = overall != null ? (overall / 100) * circumference : 0;
+    const oBand = overallBand(overall);
+
+    const rankedCategories = [...categories]
+      .filter((c) => typeof c.score === "number")
+      .sort((a, b) => b.score - a.score);
+    const strongest = rankedCategories[0];
+    const weakest = rankedCategories[rankedCategories.length - 1];
+    const showCallouts = strongest && weakest && strongest.name !== weakest.name;
 
     return (
       <div className="ai-interview-container feedback-screen">
@@ -350,7 +458,7 @@ const AIInterviewer = ({ candidateName: propName, role: propRole, onEnd }) => {
                   cy="70"
                   r="54"
                   fill="none"
-                  stroke="#8b5cf6"
+                  stroke={bandColor[oBand]}
                   strokeWidth="12"
                   strokeLinecap="round"
                   strokeDasharray={`${filled} ${circumference}`}
@@ -364,29 +472,82 @@ const AIInterviewer = ({ candidateName: propName, role: propRole, onEnd }) => {
                 / 100
               </text>
             </svg>
+            {overall != null && (
+              <span className={`overall-band-chip band-${oBand}`}>
+                {oBand === "strong" && "Strong Performance"}
+                {oBand === "medium" && "Good, Room to Grow"}
+                {oBand === "weak" && "Needs Improvement"}
+              </span>
+            )}
             <p className="feedback-summary">{feedback.summary}</p>
           </div>
+
+          {showCallouts && (
+            <div className="callout-row">
+              <div className="callout-card callout-strong">
+                <div className="callout-icon"><TrendUpIcon /></div>
+                <div>
+                  <p className="callout-label">Your strongest area</p>
+                  <p className="callout-name">{strongest.name}</p>
+                  <p className="callout-score">{strongest.score}/10</p>
+                </div>
+              </div>
+              <div className="callout-card callout-weak">
+                <div className="callout-icon"><TargetIcon /></div>
+                <div>
+                  <p className="callout-label">Focus here next</p>
+                  <p className="callout-name">{weakest.name}</p>
+                  <p className="callout-score">{weakest.score}/10</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {categories.length >= 3 && (
+            <div className="feedback-radar-card">
+              <h3>Your Skills Profile</h3>
+              <p className="setup-sub radar-sub">
+                The bigger the shape, the stronger the area — a quick visual of where you
+                shine and where to focus.
+              </p>
+              <div className="radar-wrap">
+                <RadarChart categories={categories} />
+              </div>
+              <div className="radar-legend">
+                <span><i style={{ background: bandColor.strong }} /> Strong (7.5+)</span>
+                <span><i style={{ background: bandColor.medium }} /> Good (5-7.4)</span>
+                <span><i style={{ background: bandColor.weak }} /> Needs Work (&lt;5)</span>
+              </div>
+            </div>
+          )}
 
           <div className="feedback-categories-card">
             <h3>Breakdown by category</h3>
             {categories.length === 0 && (
               <p className="setup-sub">No category breakdown available.</p>
             )}
-            {categories.map((cat, i) => (
-              <div className="category-row" key={i}>
-                <div className="category-row-top">
-                  <span className="category-name">{cat.name}</span>
-                  <span className="category-score">{cat.score}/10</span>
+            {categories.map((cat, i) => {
+              const band = scoreBand(cat.score);
+              return (
+                <div className="category-row" key={i}>
+                  <div className="category-row-top">
+                    <span className="category-name">{cat.name}</span>
+                    <span className={`category-chip chip-${band}`}>{bandLabel[band]}</span>
+                    <span className="category-score">{cat.score}/10</span>
+                  </div>
+                  <div className="category-bar-track">
+                    <div
+                      className="category-bar-fill"
+                      style={{
+                        width: `${Math.max(0, Math.min(10, cat.score || 0)) * 10}%`,
+                        background: bandColor[band],
+                      }}
+                    />
+                  </div>
+                  {cat.comment && <p className="category-comment">{cat.comment}</p>}
                 </div>
-                <div className="category-bar-track">
-                  <div
-                    className="category-bar-fill"
-                    style={{ width: `${Math.max(0, Math.min(10, cat.score || 0)) * 10}%` }}
-                  />
-                </div>
-                {cat.comment && <p className="category-comment">{cat.comment}</p>}
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {(feedback.strengths?.length > 0 || feedback.improvements?.length > 0) && (
