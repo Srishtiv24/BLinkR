@@ -11,6 +11,7 @@ import axios from "axios";
 import "../styles/AIInterviewer.css";
 import server from "../enviornment"; // adjust relative path to match where environment.js actually sits
 
+
 const initials = (name) =>
   name
     .trim()
@@ -175,6 +176,15 @@ const AIInterviewer = ({ candidateName: propName, role: propRole, onEnd }) => {
   const [experienceLevel, setExperienceLevel] = useState("Mid-level");
   const [focusAreas, setFocusAreas] = useState("");
   const [difficulty, setDifficulty] = useState("Medium");
+
+  // ---- Resume-based interview setup ----
+  const [setupMode, setSetupMode] = useState("choose"); // choose | resume | form
+  const [checkingResume, setCheckingResume] = useState(true);
+  const [existingResume, setExistingResume] = useState(null); // {resumeId, uploadedAt} | null
+  const [resumeReplacing, setResumeReplacing] = useState(false);
+  const [resumeFile, setResumeFile] = useState(null);
+  const [resumeStage, setResumeStage] = useState("idle"); // idle | uploading | analyzing | error
+  const [resumeQuestions, setResumeQuestions] = useState(null);
   const [status, setStatus] = useState("connecting"); // connecting | live | ended
   const [messages, setMessages] = useState([]); // {sender, text, time}
   const [agentSpeaking, setAgentSpeaking] = useState(false);
@@ -190,12 +200,37 @@ const AIInterviewer = ({ candidateName: propName, role: propRole, onEnd }) => {
   const localTrackRef = useRef(null);
   const localVideoTrackRef = useRef(null);
   const connectedOnceRef = useRef(false);
+  // Stores the MongoDB _id of the Meeting document created on token issue, so
+  // the frontend can POST feedback to /api/interview/:meetingId/feedback.
+  const meetingIdRef = useRef(null);
+
 
   const pushMessage = useCallback((sender, text) => {
     setMessages((prev) => [
       ...prev,
       { sender, text, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) },
     ]);
+  }, []);
+
+  // Check once, on mount, whether this user already has a resume on file —
+  // so the setup screen can offer "use my existing resume" without forcing
+  // a re-upload every single time they start an interview.
+  useEffect(() => {
+    const checkExistingResume = async () => {
+      try {
+        const authToken = localStorage.getItem("token");
+        const { data } = await axios.get(`${server}/api/v1/resume/latest`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        setExistingResume(data?.resume || null);
+      } catch (err) {
+        console.warn("Could not check for existing resume:", err);
+        setExistingResume(null);
+      } finally {
+        setCheckingResume(false);
+      }
+    };
+    checkExistingResume();
   }, []);
 
   useEffect(() => {
@@ -209,9 +244,24 @@ const AIInterviewer = ({ candidateName: propName, role: propRole, onEnd }) => {
         const authToken = localStorage.getItem("token");
         const { data } = await axios.post(
           `${server}/api/interview/token`,
-          { candidateName, role, interviewType, experienceLevel, focusAreas, difficulty },
+          {
+            candidateName,
+            role,
+            interviewType,
+            experienceLevel,
+            focusAreas,
+            difficulty,
+            resumeQuestions,
+            // Pass resumeId so the backend can link this session to the Resume doc
+            resumeId: resumeQuestions && existingResume ? existingResume.resumeId : undefined,
+          },
           { headers: { Authorization: `Bearer ${authToken}` } }
         );
+
+        // Store the backend Meeting document id for feedback persistence
+        if (data.meetingId) {
+          meetingIdRef.current = data.meetingId;
+        }
 
         room = new Room();
         roomRef.current = room;
@@ -234,7 +284,7 @@ const AIInterviewer = ({ candidateName: propName, role: propRole, onEnd }) => {
           segments.forEach((seg) => {
             if (!seg.final) return;
             const isYou = !(participant?.isAgent || participant?.identity?.includes("agent"));
-            pushMessage(isYou ? "You" : "BlinkR AI", seg.text);
+            pushMessage(isYou ? "You" : "BLinkR AI", seg.text);
           });
         });
 
@@ -245,7 +295,31 @@ const AIInterviewer = ({ candidateName: propName, role: propRole, onEnd }) => {
             if (msg.type === "interview_error") {
               setErrorBanner(msg.message);
             } else if (msg.type === "interview_feedback") {
-              setFeedback(msg.data);
+              // ── Persist feedback to the backend before updating UI state ──
+              // This is fire-and-forget from the UI perspective: if the save
+              // fails the candidate still sees their feedback on screen — it
+              // just won't appear in history.  The feedback state is set to
+              // "ready" regardless so the existing UI flow is unchanged.
+              const feedbackData = msg.data;
+              const mid = meetingIdRef.current;
+              if (mid) {
+                const authToken = localStorage.getItem("token");
+                axios
+                  .post(
+                    `${server}/api/interview/${mid}/feedback`,
+                    { feedback: feedbackData },
+                    { headers: { Authorization: `Bearer ${authToken}` } }
+                  )
+                  .then(() => {
+                    console.log("[AIInterviewer] feedback persisted to backend");
+                  })
+                  .catch((err) => {
+                    console.error("[AIInterviewer] feedback persistence failed:", err);
+                  });
+              } else {
+                console.warn("[AIInterviewer] no meetingId — feedback not persisted");
+              }
+              setFeedback(feedbackData);
               setFeedbackState("ready");
             } else if (msg.type === "interview_feedback_error") {
               setFeedbackErrorReason("failed");
@@ -255,6 +329,7 @@ const AIInterviewer = ({ candidateName: propName, role: propRole, onEnd }) => {
             // ignore malformed/unrelated data messages
           }
         });
+
 
         room.on(RoomEvent.Disconnected, () => {
           setStatus("ended");
@@ -292,7 +367,7 @@ const AIInterviewer = ({ candidateName: propName, role: propRole, onEnd }) => {
       roomRef.current?.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [started, candidateName, role, interviewType, experienceLevel, focusAreas, difficulty]);
+  }, [started, candidateName, role, interviewType, experienceLevel, focusAreas, difficulty, resumeQuestions]);
 
   const toggleMute = () => {
     if (!roomRef.current) return;
@@ -357,9 +432,23 @@ const AIInterviewer = ({ candidateName: propName, role: propRole, onEnd }) => {
   }, [feedbackState]);
 
   const skipFeedback = async () => {
+    // Mark the session abandoned on the backend so it appears in history
+    // even without feedback, rather than hanging as IN_PROGRESS.
+    const mid = meetingIdRef.current;
+    if (mid) {
+      const authToken = localStorage.getItem("token");
+      axios
+        .patch(
+          `${server}/api/interview/${mid}/abandon`,
+          {},
+          { headers: { Authorization: `Bearer ${authToken}` } }
+        )
+        .catch((err) => console.warn("[AIInterviewer] abandon call failed:", err));
+    }
     await disconnectNow();
     navigate("/home");
   };
+
 
   const goHome = async () => {
     if (roomRef.current && status === "live") {
@@ -627,92 +716,259 @@ const AIInterviewer = ({ candidateName: propName, role: propRole, onEnd }) => {
     );
   }
 
+  // Generates resume-based questions from a given resumeId, then starts
+  // the interview. Shared by both the "use existing resume" and
+  // "upload a new resume" paths below.
+  const generateFromResumeIdAndStart = async (resumeId) => {
+    const authToken = localStorage.getItem("token");
+    try {
+      setResumeStage("analyzing");
+      const { data } = await axios.get(`${server}/api/v1/resume/${resumeId}/question`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (Array.isArray(data?.questions) && data.questions.length > 0) {
+        setResumeQuestions(data.questions);
+      }
+    } catch (err) {
+      console.warn("Failed to generate resume-based questions, continuing without them:", err);
+      setResumeStage("error");
+    } finally {
+      setStatus("connecting");
+      setStarted(true);
+    }
+  };
+
+  const startWithExistingResume = () => {
+    if (!candidateName.trim() || !existingResume) return;
+    generateFromResumeIdAndStart(existingResume.resumeId);
+  };
+
+  const uploadResumeAndStart = async () => {
+    if (!candidateName.trim() || !resumeFile) return;
+    const authToken = localStorage.getItem("token");
+    try {
+      setResumeStage("uploading");
+      const formData = new FormData();
+      formData.append("resume", resumeFile);
+      const { data } = await axios.post(`${server}/api/v1/resume`, formData, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      const resumeId = data?.resumeId;
+      if (!resumeId) throw new Error("No resumeId returned from upload");
+      await generateFromResumeIdAndStart(resumeId);
+    } catch (err) {
+      console.warn("Resume upload failed, continuing without it:", err);
+      setResumeStage("error");
+      setStatus("connecting");
+      setStarted(true);
+    }
+  };
+
   // ---- Setup screen ----
   if (!started) {
+    const resumeBusy = resumeStage === "uploading" || resumeStage === "analyzing";
+
     return (
       <div className="ai-interview-container setup-screen">
         <button className="floating-back-btn" onClick={() => navigate("/home")} aria-label="Back to home">
           <BackIcon />
         </button>
         <div className="setup-panel setup-panel-wide">
-          <h2>BlinkR AI Interviewer</h2>
-          <p className="setup-sub">Tell us a bit about the interview you want, and we'll tailor it.</p>
-          <form
-            className="setup-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!candidateName.trim()) return;
-              setStatus("connecting");
-              setStarted(true);
-            }}
-          >
-            <label>
-              Your Name
-              <input
-                type="text"
-                value={candidateName}
-                onChange={(e) => setCandidateName(e.target.value)}
-                placeholder="e.g. Priya Sharma"
-                required
-              />
-            </label>
+          <h2>BLinkR AI Interviewer</h2>
+          <p className="setup-sub">
+            {setupMode === "choose" && "How would you like to set up your interview?"}
+            {setupMode === "resume" && "We'll tailor questions to your actual resume."}
+            {setupMode === "form" && "Tell us a bit about the interview you want, and we'll tailor it."}
+          </p>
 
-            <label>
-              Role you're interviewing for
-              <input
-                type="text"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                placeholder="e.g. Frontend Developer - JS"
-              />
-            </label>
-
-            <div className="setup-form-row">
-              <label>
-                Interview Type
-                <select value={interviewType} onChange={(e) => setInterviewType(e.target.value)}>
-                  <option>Technical</option>
-                  <option>Behavioral</option>
-                  <option>HR/Screening</option>
-                  <option>Mixed</option>
-                </select>
-              </label>
-
-              <label>
-                Experience Level
-                <select value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value)}>
-                  <option>Fresher / Entry-level</option>
-                  <option>Mid-level</option>
-                  <option>Senior</option>
-                </select>
-              </label>
+          {/* ---- Mode chooser ---- */}
+          {setupMode === "choose" && (
+            <div className="mode-choice-row">
+              <button className="mode-card" onClick={() => setSetupMode("resume")}>
+                <div className="mode-card-title">Use My Resume</div>
+                <p className="mode-card-sub">
+                  Questions generated from your actual experience and skills.
+                </p>
+              </button>
+              <button className="mode-card" onClick={() => setSetupMode("form")}>
+                <div className="mode-card-title">Fill Details Manually</div>
+                <p className="mode-card-sub">
+                  Choose the role, type, and difficulty yourself.
+                </p>
+              </button>
             </div>
+          )}
 
-            <div className="setup-form-row">
-              <label>
-                Difficulty
-                <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
-                  <option>Easy</option>
-                  <option>Medium</option>
-                  <option>Hard</option>
-                </select>
-              </label>
+          {/* ---- Resume mode ---- */}
+          {setupMode === "resume" && (
+            <div className="resume-mode-panel">
+              <button className="mode-back-link" onClick={() => setSetupMode("choose")}>
+                ← Choose a different method
+              </button>
 
-              <label>
-                Focus Areas <span className="optional-tag">(optional)</span>
+              <label className="resume-name-label">
+                Your Name
                 <input
                   type="text"
-                  value={focusAreas}
-                  onChange={(e) => setFocusAreas(e.target.value)}
-                  placeholder="e.g. React, System Design"
+                  value={candidateName}
+                  onChange={(e) => setCandidateName(e.target.value)}
+                  placeholder="e.g. Priya Sharma"
+                  required
                 />
               </label>
-            </div>
 
-            <button type="submit" className="start-btn">
-              Start Interview
-            </button>
-          </form>
+              {checkingResume ? (
+                <p className="setup-sub">Checking for your resume...</p>
+              ) : existingResume && !resumeReplacing ? (
+                <div className="existing-resume-box">
+                  <p className="existing-resume-found">
+                    We found a resume you uploaded on{" "}
+                    {new Date(existingResume.uploadedAt).toLocaleDateString()}.
+                  </p>
+                  <div className="resume-btn-row">
+                    <button
+                      className="start-btn"
+                      onClick={startWithExistingResume}
+                      disabled={!candidateName.trim() || resumeBusy}
+                    >
+                      {resumeBusy ? "Preparing..." : "Ask From This Resume"}
+                    </button>
+                    <button
+                      className="skip-btn"
+                      onClick={() => setResumeReplacing(true)}
+                      disabled={resumeBusy}
+                    >
+                      Upload a Different Resume
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="upload-resume-box">
+                  <label className="resume-file-label">
+                    Resume (PDF)
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                  <button
+                    className="start-btn"
+                    onClick={uploadResumeAndStart}
+                    disabled={!candidateName.trim() || !resumeFile || resumeBusy}
+                  >
+                    {resumeStage === "uploading" && "Uploading..."}
+                    {resumeStage === "analyzing" && "Analyzing Resume..."}
+                    {!resumeBusy && "Upload & Start Interview"}
+                  </button>
+                  {existingResume && resumeReplacing && (
+                    <button
+                      className="skip-btn"
+                      onClick={() => setResumeReplacing(false)}
+                      disabled={resumeBusy}
+                    >
+                      Use my existing resume instead
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {resumeStage === "error" && (
+                <p className="resume-error-note">
+                  Something went wrong processing your resume — starting with general
+                  questions instead.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* ---- Manual form mode ---- */}
+          {setupMode === "form" && (
+            <>
+              <button className="mode-back-link" onClick={() => setSetupMode("choose")}>
+                ← Choose a different method
+              </button>
+              <form
+                className="setup-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!candidateName.trim()) return;
+                  setStatus("connecting");
+                  setStarted(true);
+                }}
+              >
+                <label>
+                  Your Name
+                  <input
+                    type="text"
+                    value={candidateName}
+                    onChange={(e) => setCandidateName(e.target.value)}
+                    placeholder="e.g. Priya Sharma"
+                    required
+                  />
+                </label>
+
+                <label>
+                  Role you're interviewing for
+                  <input
+                    type="text"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    placeholder="e.g. Frontend Developer - JS"
+                  />
+                </label>
+
+                <div className="setup-form-row">
+                  <label>
+                    Interview Type
+                    <select value={interviewType} onChange={(e) => setInterviewType(e.target.value)}>
+                      <option>Technical</option>
+                      <option>Behavioral</option>
+                      <option>HR/Screening</option>
+                      <option>Mixed</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Experience Level
+                    <select value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value)}>
+                      <option>Fresher / Entry-level</option>
+                      <option>Mid-level</option>
+                      <option>Senior</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div className="setup-form-row">
+                  <label>
+                    Difficulty
+                    <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
+                      <option>Easy</option>
+                      <option>Medium</option>
+                      <option>Hard</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Focus Areas <span className="optional-tag">(optional)</span>
+                    <input
+                      type="text"
+                      value={focusAreas}
+                      onChange={(e) => setFocusAreas(e.target.value)}
+                      placeholder="e.g. React, System Design"
+                    />
+                  </label>
+                </div>
+
+                <button type="submit" className="start-btn">
+                  Start Interview
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </div>
     );
@@ -764,7 +1020,7 @@ const AIInterviewer = ({ candidateName: propName, role: propRole, onEnd }) => {
               </div>
             </div>
           </div>
-          <p className="avatar-label">BlinkR AI Interviewer</p>
+          <p className="avatar-label">BLinkR AI Interviewer</p>
           <p className="avatar-state">{agentSpeaking ? "Speaking" : "Listening"}</p>
           <div className={`mini-wave ${agentSpeaking ? "active" : ""}`}>
             {Array.from({ length: 20 }).map((_, i) => (

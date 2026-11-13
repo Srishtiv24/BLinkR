@@ -641,7 +641,7 @@ export default function VideoMeetComponent() {
         <div className={styles.entryScreen}>
           <div className={styles.entryCard}>
             <div className={styles.entryLogoRow}>
-              <span className={styles.appName}>BlinkR</span>
+              <span className={styles.appName}>BLinkR</span>
             </div>
 
             <div className={styles.entryHeading}>
@@ -787,7 +787,7 @@ export default function VideoMeetComponent() {
         {/* ---------- Header ---------- */}
         <header className={styles.header}>
           <div className={styles.headerLeft}>
-            <span className={styles.appName}>BlinkR</span>
+            <span className={styles.appName}>BLinkR</span>
             <span className={styles.headerDivider} />
             <span className={styles.roomLabel}>Interview Room</span>
           </div>

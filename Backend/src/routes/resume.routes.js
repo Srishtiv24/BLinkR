@@ -5,6 +5,7 @@ import {
   generalizedQuestions,
   skillQuestions,
   regenerateQuestions,
+  getLatestResume,
 } from "../controllers/resumeController.js";
 import { localAuth, auth0Auth } from "../middlewares/middleware.js";
 
@@ -20,8 +21,8 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
-//const upload = multer({ dest: 'uploads/' })
 
+router.route("/latest").get(localAuth, auth0Auth, getLatestResume);
 router
   .route("/")
   .post(upload.single("resume"), localAuth, auth0Auth, uploadResume);

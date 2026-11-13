@@ -36,6 +36,7 @@ from livekit.agents import (
     Agent,
     AgentSession,
     JobContext,
+    RoomInputOptions,
     WorkerOptions,
     cli,
     llm,
@@ -128,6 +129,8 @@ class InterviewerAgent(Agent):
         experience_level = config.get("experienceLevel", "Mid-level")
         focus_areas = config.get("focusAreas", "")
         difficulty = config.get("difficulty", "Medium")
+        resume_questions = config.get("resumeQuestions")
+        past_weak_areas = config.get("pastWeakAreas")
 
         type_guidance = {
             "Technical": "Focus on technical/coding fundamentals, problem-solving, "
@@ -154,6 +157,50 @@ class InterviewerAgent(Agent):
                 f"- The candidate specifically wants to focus on: {focus_areas}. "
                 "Prioritize questions from these areas where relevant.\n"
             )
+
+        if isinstance(resume_questions, list) and len(resume_questions) > 0:
+            # Format the resume-derived question bank into the prompt. These
+            # were generated from the candidate's actual resume, so they
+            # take priority over generic role-based questions.
+            bank_lines = []
+            for q in resume_questions:
+                if not isinstance(q, dict) or not q.get("question"):
+                    continue
+                qtype = q.get("type", "general")
+                qlevel = q.get("level", "basic")
+                bank_lines.append(f"- [{qtype}/{qlevel}] {q['question']}")
+            question_bank = "\n".join(bank_lines)
+
+            extra_instructions += (
+                "\nThis candidate uploaded their resume, and the following "
+                "questions were generated specifically from it. Use THIS bank "
+                "as your primary source of questions instead of generic ones:\n"
+                f"{question_bank}\n\n"
+                "Ask them roughly in the order given (basic → intermediate → "
+                "advanced within each type), but adapt naturally based on the "
+                "conversation — you don't have to use every single one, and you "
+                "can ask a natural follow-up before moving to the next listed "
+                "question. Still keep the overall interview conversational, one "
+                "question at a time, as described above.\n"
+            )
+
+        if isinstance(past_weak_areas, list) and len(past_weak_areas) > 0:
+            weak_lines = "\n".join(
+                f"- {w['name']} (recent average: {w['avgScore']}/10)"
+                for w in past_weak_areas
+                if isinstance(w, dict) and w.get("name") is not None
+            )
+            if weak_lines:
+                extra_instructions += (
+                    "\nBased on this candidate's recent past interviews, they have "
+                    "consistently scored lower in these areas:\n"
+                    f"{weak_lines}\n\n"
+                    "Where it fits naturally, include at least one question that "
+                    "gives them a genuine chance to demonstrate improvement in "
+                    "one of these areas specifically. Don't call out or mention "
+                    "their past scores to the candidate directly — just weave it "
+                    "into your question choices.\n"
+                )
 
         super().__init__(instructions=BASE_INSTRUCTIONS + extra_instructions)
         self._room = room
@@ -397,9 +444,43 @@ async def entrypoint(ctx: JobContext):
         vad=silero.VAD.load(),
     )
 
+    # --- DEBUG: is the candidate's voice actually reaching the agent? ---
+    # NOTE: the real event is "user_state_changed" (states: speaking /
+    # listening / away). Names like "user_started_speaking" are NOT valid in
+    # this livekit-agents version — registering them doesn't error, it just
+    # silently never fires, which would wrongly look like "VAD is broken".
+    def _on_user_state_changed(ev):
+        print(f"[interview_agent] user state: {ev.old_state} -> {ev.new_state}")
+
+    session.on("user_state_changed", _on_user_state_changed)
+
+    # Every STT result (interim + final) — without this, a working STT is
+    # invisible in the terminal, which is how "no STT output" looks.
+    def _on_user_input_transcribed(ev):
+        kind = "FINAL" if getattr(ev, "is_final", True) else "interim"
+        print(f"[interview_agent] user_input_transcribed ({kind}): {ev.transcript!r}")
+
+    session.on("user_input_transcribed", _on_user_input_transcribed)
+
+    # Optional noise cancellation (LiveKit BVC). OFF by default: it needs
+    # `pip install livekit-plugins-noise-cancellation` AND the feature enabled
+    # on your LiveKit Cloud project, and a missing setup can break audio input
+    # instead of helping. Turn on with ENABLE_NOISE_CANCELLATION=1 in .env.
+    room_input_kwargs = {}
+    if os.environ.get("ENABLE_NOISE_CANCELLATION") == "1":
+        try:
+            from livekit.plugins import noise_cancellation
+            room_input_kwargs["room_input_options"] = RoomInputOptions(
+                noise_cancellation=noise_cancellation.BVC(),
+            )
+            print("[interview_agent] noise cancellation (BVC) enabled")
+        except Exception as e:
+            print(f"[interview_agent] noise cancellation requested but unavailable: {e}")
+
     await session.start(
         agent=InterviewerAgent(config=config, room=ctx.room),
         room=ctx.room,
+        **room_input_kwargs,
     )
 
     # STT/TTS errors do emit a real "error" event on the session (unlike
